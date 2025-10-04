@@ -307,13 +307,6 @@ echo "5e0f3b6ec51e9019cbb890c95e98fcd5  raw/ERR769583.fastq.gz" | md5sum -c -
 URL='https://rest.ensembl.org/info/ping'
 curl -fsSL -H 'Accept: application/json' "$URL" \
 | { command -v jq >/dev/null 2>&1 && jq || python3 -m json.tool 2>/dev/null || cat; }
-URL='https://rest.ensembl.org/info/ping'
-curl -sS -H 'Accept: application/json' -w '\nHTTP %{http_code} in %{time_total}s\n' "$URL" \
-| { command -v jq >/dev/null 2>&1 && jq || python3 -m json.tool 2>/dev/null || cat; }
-URL='https://rest.ensembl.org/info/ping'
-curl --connect-timeout 5 --max-time 20 --retry 3 --retry-delay 2 \
-  -fsSL -H 'Accept: application/json' "$URL" \
-| { command -v jq >/dev/null 2>&1 && jq || python3 -m json.tool 2>/dev/null || cat; }
 #Quietly download JSON data from $URL, following redirects, and fail gracefully if the request doesn’t work.
 #command -v jq checks if the jq command exists.&& jq means “if jq exists, run jq”.
 #python3 -m json.tool is Python’s built-in JSON pretty-printer.2>/dev/null hides any errors.If Python is available, this prettifies the JSON too.If neither jq nor Python is available, just print the raw JSON as plain text.
