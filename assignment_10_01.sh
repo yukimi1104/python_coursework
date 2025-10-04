@@ -86,8 +86,6 @@ zcat raw/ERR769583.fastq.gz > /dev/null 2> logs/decomp.log &
 #Task 7:Identify and force-kill any running zcat processes matching the pattern, or report if none are running, to clean up stuck jobs in shared systems without wasting resources.
 pgrep -af zcat
 pkill -9 -f zcat || echo "No zcat processes found."
-#I think if it is a pattern, pattern='raw/ERR769583.fastq.gz'
-#pkill -9 -f "zcat.*$pattern" || echo "No matching zcat processes."
 #Task 8:Combine stdout and stderr when attempting to list a non-existent file, saving to out.log, then preview the log, to demonstrate stream management for debugging tool errors in workflows.
 ls non_existent.txt > out.log 2>&1 ||true; cat out.log
 #Task 9:Sort the lines of raw/sample.vcf using input redirection from the file, saving the sorted output to sorted.vcf, to prepare data for tools that require sorted input like bedtools.
@@ -100,7 +98,7 @@ chr1     2000    2600    enhancer_B      0       -
 chr2     300     900     peak_C          0       +
 chr3     5000    5600    exon_D          0       -
 EOF
-chmod +x temp.bed
+chmod +x temp.bed  
 echo "---- head temp.bed ----"
 head -n 10 temp.bed
 echo "---- columnized view ----"
