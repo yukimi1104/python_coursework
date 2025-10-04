@@ -176,34 +176,13 @@ sudo apt update
 sudo apt install -y htop
 htop --version
 #Task 3:Install Python 3.11 using apt-get (adds PPA if needed on older systems), to set up a specific version for compatibility with legacy bioinformatics scripts, verifying the installation.
-# 1) See who holds the lock (yours shows PID 842)
-ps -fp 842 || true
-journalctl -u unattended-upgrades --since "30 min ago" | tail -n 50
-# 2) If it's clearly still doing work, let it complete to avoid corruption.
-# If it looks stuck, stop the services cleanly:
-sudo systemctl stop unattended-upgrades || true
-sudo systemctl stop apt-daily.service apt-daily.timer apt-daily-upgrade.service apt-daily-upgrade.timer || true
-# 3) Make sure no apt/dpkg processes remain
-pgrep -a 'apt|dpkg' || true
-# If any remain for a long time and are idle, you can terminate them cautiously:
-# sudo kill -9 <PID>
-# 4) Verify no one holds the locks anymore
-sudo lsof /var/lib/dpkg/lock-frontend || true
-sudo lsof /var/cache/apt/archives/lock || true
-# 5) If (and only if) no processes hold them, remove the stale lock files
-sudo rm -f /var/lib/dpkg/lock-frontend
-sudo rm -f /var/cache/apt/archives/lock
-# 6) Repair any half-configured packages
-sudo dpkg --configure -a
-sudo apt-get -f install -y
-# 7) Update package lists
 sudo apt-get update
-# Add PPA only if needed
-sudo apt-get install -y software-properties-common
-sudo add-apt-repository -y ppa:deadsnakes/ppa || true
-sudo apt-get update
-# Install and verify
-sudo apt-get install -y python3.11
+sudo apt-get upgrade -y
+sudo apt-get install -y python3.11 python3.11-venv python3.11-dev
+#sudo apt-get install -y software-properties-common
+#sudo add-apt-repository ppa:deadsnakes/ppa -y
+#sudo apt-get update
+#sudo apt-get install -y python3.11 python3.11-venv python3.11-dev
 python3.11 --version
 #Task 4：Install Python 3.12 using apt, to use a stable version for general data processing, then check the version to confirm.
 # 1. Update your package list
