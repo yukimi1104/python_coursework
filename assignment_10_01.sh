@@ -128,6 +128,7 @@ head regions.bed
 #Task 7: Extract sequences from raw/4KRP_chainA.fasta (skipping headers), break into individual amino acids, sort and count unique with frequencies ranked, to compute amino acid composition in protein analysis.
 grep -v '^>' 4KRP_chainA.fasta \
 | tr -d '\n' \
+| tr 'a-z' 'A-Z' \
 | tr -cd 'A-Z' \
 | fold -w1 \
 | sort \
