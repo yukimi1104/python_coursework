@@ -314,11 +314,9 @@ URL='https://rest.ensembl.org/info/ping'
 curl --connect-timeout 5 --max-time 20 --retry 3 --retry-delay 2 \
   -fsSL -H 'Accept: application/json' "$URL" \
 | { command -v jq >/dev/null 2>&1 && jq || python3 -m json.tool 2>/dev/null || cat; }
-#前半段（抓取 JSON）curl：发起 HTTP 请求。-f：遇到 HTTP 错（≥400）直接返回非零退出码，不输出错误页面。-s：静默模式（不显示进度条）。-S：配合 -s，如果出错仍显示错误信息。-L：跟随重定向。#-H 'Accept: application/json'：请求头，告诉服务器想要 JSON。
-#"$URL"：要访问的地址（如 https://rest.ensembl.org/info/ping）。
-#|：把 curl 的输出作为后面命令的输入。{ …; }：命令分组，在同一个 shell里执行；末尾 ; 是语法要求。command -v jq >/dev/null 2>&1：检测系统里有没有 jq，并把检测输出丢到黑洞（不显示）。成功（找到 jq）→ 返回码 0失败（没装 jq）→ 返回码非 0&& jq：如果上一条成功，就用 jq 来美化 JSON（从标准输入读，标准输出写）。
-#python3 -m json.tool 2>/dev/null：如果前一步没跑（或失败），用 Python 自带的 JSON 工具美化；错误输出丢弃。|| cat：再不行就原样输出（至少保证有输出）。
-#如果系统有 jq → 用 jq 格式化；否则 → 用 python3 -m json.tool 格式化；如果还不行 → 原样输出。
+#Quietly download JSON data from $URL, following redirects, and fail gracefully if the request doesn’t work.
+#command -v jq checks if the jq command exists.&& jq means “if jq exists, run jq”.
+#python3 -m json.tool is Python’s built-in JSON pretty-printer.2>/dev/null hides any errors.If Python is available, this prettifies the JSON too.If neither jq nor Python is available, just print the raw JSON as plain text.
 #Task 6:Export the PATH variable after appending a bin/ directory, saving to path.log, to debug environment setups in tool integrations.
 export PATH="$PATH:$(pwd)/bin" && echo "$PATH" > path.log
 #Task 7:Search command history for 'zcat' uses, showing the last 5, to recall previous commands for building repeatable scripts (note: Bash must be interactive for history to show entries; test in interactive terminal).
