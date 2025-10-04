@@ -320,18 +320,18 @@ file raw/*.gz
 clear && pwd
 #Task 10:Download a FASTQ, inspect its type and size, compress if needed, and archive to tgz, confirming each step, to practice a full data ingestion workflow.
 #mkdir -p raw && cd raw
-curl -I https://ftp.sra.ebi.ac.uk/vol1/fastq/ERR164/ERR164407/ERR164407.fastq.gz
+curl -I https://ftp.sra.ebi.ac.uk/vol1/fastq/ERR164/ERR164407/ERR164407.fastq.gz #-I see head request
 curl -L --range 0-1023 -o test.bin https://ftp.sra.ebi.ac.uk/vol1/fastq/ERR164/ERR164407/ERR164407.fastq.gz
 file test.bin
-rm test.bin
+rm test.bin #--range 0-1023 downloads just the first 1024 bytes.-L follows redirects.file test.bin inspects those bytes to confirm it looks like a gzip.
 curl -L -C - -O https://ftp.sra.ebi.ac.uk/vol1/fastq/ERR164/ERR164407/ERR164407.fastq.gz
 file ERR164407.fastq.gz
-ls -lh ERR164407.fastq.gz
+ls -lh ERR164407.fastq.gz  #-L follow redirects; -C - resume if interrupted; -O keep original filename.
 gzip -t ERR164407.fastq.gz && echo "✅ GZIP OK" || echo "❌ GZIP FAIL"
 cd ..
-tar -cvzf raw.tgz raw/
+tar -cvzf raw.tgz raw/ #-c create, -v verbose (list files), -z gzip-compress the tar stream, -f raw.tgz output file name.
 ls -lh raw.tgz
-tar -tzf raw.tgz
+tar -tzf raw.tgz -t list, -z gunzip, -f file. without decompressing confirming paths like raw/ERR164407.fastq.gz are included.
 #Section 7
 #Task 1:Search for the pattern 'ATC' in raw/4KRP_chainA.fasta, counting occurrences, to find specific motifs in protein sequences for functional analysis.
 grep -v '^>' 4KRP_chainA.fasta | tr -d '\n' | grep -oi 'ATC' | wc -l
