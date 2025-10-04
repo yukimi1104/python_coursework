@@ -147,27 +147,22 @@ awk '{
 | sort -k2,2nr > aa_composition.txt
 #Task 9:Task**: In `raw/4KRP_chainB.fasta`, count the N-glycosylation motif **`N[^P][ST][^P]`** (as defined in Uniprot), allowing matches across line breaks, and also report **1-based start positions**.
 awk '
-  /^>/ { next }
-  { seq = seq toupper($0) }
-  END {
-    n = length(seq)
+/^>/ { next }
+{ seq = seq toupper($0) }
+END {
     cnt = 0
-    for (i = 1; i <= n-3; i++) {
-      a = substr(seq, i,   1)
-      b = substr(seq, i+1, 1)
-      c = substr(seq, i+2, 1)
-      d = substr(seq, i+3, 1)
-      if (a=="N" && b!="P" && (c=="S" || c=="T") && d!="P") {
-        pos[++cnt] = i   # 1-based start position
-      }
+    n = length(seq)
+    for (i = 1; i <= n - 3; i++) {
+        a = substr(seq, i, 1)
+        b = substr(seq, i + 1, 1)
+        c = substr(seq, i + 2, 1)
+        d = substr(seq, i + 3, 1)
+        if (a == "N" && b != "P" && (c == "S" || c == "T") && d != "P") {
+            cnt++
+            printf("Count: %d\t1-based position: %d\n", cnt, i)
+        }
     }
-    print "Count: " cnt
-    printf "Positions (1-based):"
-    for (j = 1; j <= cnt; j++) printf " %d", pos[j]
-    print ""
-  }
-' 4KRP_chainB.fasta
-#always skip what is same line with next, # 从位置 i 取 1 个字符
+}'  4KRP_chainB.fasta
 #Task 10: Replace all 'A' residues with 'N' in the sequence lines of raw/4KRP_chainA.fasta (leaving headers intact), saving to masked.fasta, to mask specific residues for privacy or testing in annotations.
 sed '/^>/! s/A/N/g' 4KRP_chainA.fasta > masked.fasta
 #g means substitution of all, not the first one
