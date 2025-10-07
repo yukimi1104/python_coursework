@@ -130,6 +130,19 @@ while True:
     start = idx + 2   # move past this 'GG' to avoid overlaps
     #string.find(sub[, start[, end]])
 
+my_string = "AAAAGGAAAAGGAAAA"
+positions = []
+start = 0
+idx = my_string.find("GG", start)  # initialize idx before the loop
+
+while idx != -1:
+    positions.append(idx)
+    print("Found GG at index:", idx)
+    start = idx + 2   # move past this "GG" to avoid overlaps
+    idx = my_string.find("GG", start)  # update idx for the next iteration
+
+print("All positions:", positions)
+
 print(positions)
 g) Store the strings "AcgT" and "acGT" into two different variables, and
 do a check on whether they contain the same letters. You can do this
@@ -260,6 +273,7 @@ print(f"Number of primes found: {len(primes)}")
 print("First 20 primes:", primes[:20])
 # Uncomment below to print all
 # print(primes)
+
 
 
 
