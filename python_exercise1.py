@@ -106,11 +106,8 @@ e) *Then, find a way of calculating and printing the positions of all GGs
 in the string. (You might need to check the documentation for this one).
 count=my_string.count("GG")
 print(count) 
-positions = [i for i in range(len(my_string)) if my_string.startswith("GG", i)]
-print("Positions of GG:", positions) #[expression for variable in iterable if condition]
 import re
-for match in re.finditer("GG",my_string):
-    print(match.start())
+print(re.search('GG', string)) 
 f) Use the same string as in d). How many occurrences of AAAA are
 there? AAA? AA? A? Do you understand why?
 my_string = "AAAAGGAAAAGGAAAA"
@@ -295,6 +292,7 @@ while len(primes) < 1000:
     num += 1
 for prime in primes:
     print(prime, end=' ')
+
 
 
 
