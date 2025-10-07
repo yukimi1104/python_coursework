@@ -109,6 +109,8 @@ print(count)
 positions = [i for i in range(len(my_string)) if my_string.startswith("GG", i)]
 print("Positions of GG:", positions) #[expression for variable in iterable if condition]
 import re
+for match in re.finditer("GG",my_string)
+    print(match.start())
 matches = re.finditer(pattern, seq)
 positions = [match.start() for match in re.finditer("GG", seq)]
 print(positions)
@@ -296,6 +298,7 @@ while len(primes) < 1000:
     num += 1
 for prime in primes:
     print(prime, end=' ')
+
 
 
 
