@@ -127,6 +127,7 @@ while True:
         break
     positions.append(idx)
     start = idx + 2   # move past this 'GG' to avoid overlaps
+    #string.find(sub[, start[, end]])
 
 print(positions)
 g) Store the strings "AcgT" and "acGT" into two different variables, and
@@ -248,6 +249,7 @@ print(f"Number of primes found: {len(primes)}")
 print("First 20 primes:", primes[:20])
 # Uncomment below to print all
 # print(primes)
+
 
 
 
