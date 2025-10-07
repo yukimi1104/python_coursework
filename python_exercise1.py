@@ -214,6 +214,15 @@ for _ in range(n):
 print(f"First {n} Fibonacci numbers:")
 print(fib)
 print()
+#fib = []
+a, b = 1, 1
+n = 5
+
+for i in range(n):
+    fib.append(a)
+    a, b = b, a + b
+    print(f"Iteration {i}: a={a}, b={b}, fib={fib}")
+
 
 #%% 4) Factorial of a user-entered number
 import math
@@ -251,6 +260,7 @@ print(f"Number of primes found: {len(primes)}")
 print("First 20 primes:", primes[:20])
 # Uncomment below to print all
 # print(primes)
+
 
 
 
