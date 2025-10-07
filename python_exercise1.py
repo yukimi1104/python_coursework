@@ -151,6 +151,7 @@ print("My name is {} {}".format(name, surname))
 print("My name is {1} {0}".format(name, surname))
 print("My name is {0}{0} {1}".format(name, surname))
 print("My name is {0}{0} {1}".format(name, surname[:5]))
+#print("My name is {0}\t{1}".format(name, surname))
 
 #Question 5
 seq_1 = "AAATT "   # note: there is a space at the end
@@ -249,6 +250,7 @@ print(f"Number of primes found: {len(primes)}")
 print("First 20 primes:", primes[:20])
 # Uncomment below to print all
 # print(primes)
+
 
 
 
