@@ -105,9 +105,9 @@ print(position) #4
 e) *Then, find a way of calculating and printing the positions of all GGs
 in the string. (You might need to check the documentation for this one).
 count=my_string.count("GG")
-print(count)
+print(count) 
 positions = [i for i in range(len(my_string)) if my_string.startswith("GG", i)]
-print("Positions of GG:", positions)
+print("Positions of GG:", positions) #[expression for variable in iterable if condition]
 f) Use the same string as in d). How many occurrences of AAAA are
 there? AAA? AA? A? Do you understand why?
 my_string = "AAAAGGAAAAGGAAAA"
@@ -126,6 +126,7 @@ while True:
     if idx == -1:
         break
     positions.append(idx)
+      print("Found GG at index:", idx)  # print here
     start = idx + 2   # move past this 'GG' to avoid overlaps
     #string.find(sub[, start[, end]])
 
@@ -250,6 +251,7 @@ print(f"Number of primes found: {len(primes)}")
 print("First 20 primes:", primes[:20])
 # Uncomment below to print all
 # print(primes)
+
 
 
 
