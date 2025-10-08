@@ -293,7 +293,7 @@ duplicates = []
 with open("regions.fna", "r") as file:
     for line in file:
         if line.startswith(">"):
-            seq_id = line.split()[0][1:] # Extract the ID without the traling >
+           seq_id = line.strip()[1:].split()[0] # Extract the ID without the traling >
             if seq_id in seq_id_set:
                 duplicates.append(seq_id)
             else:
@@ -313,10 +313,9 @@ with open("regions_sub1.fna", "r") as regions_sub1:
     for line in regions_sub1:
         line = line.strip()
         if line.startswith(">"):
-            seq_id = line.split()[0][1:]
+            seq_id = line.strip()[1:].split()[0]
             seq_id_sub1.add(seq_id)
 #print(seq_id_sub1)
-
 with open("regions_sub2.fna", "r") as regions_sub2:
     for line in regions_sub2:
         line = line.strip()
