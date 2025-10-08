@@ -75,6 +75,12 @@ GGA GGT GGC gGG"""
 codons = [c.strip().upper() for c in codon_line.split() if c.strip()]
 print(len(codons), "codons loaded.")
 print(codons[:10], "...")
+#codons = []
+for c in codon_line.split():
+    if c.strip():               # only keep non-empty pieces
+        c = c.strip().upper()   # remove spaces, convert to uppercase
+        codons.append(c)        # add to the list
+
 
 ##%% 2.1 Lists — 4
 # From the list created in the previous exercise, remove all codons that result in Leucine.
