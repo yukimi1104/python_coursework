@@ -218,27 +218,17 @@ print("\nDone.\n")
 #%% 3) Fibonacci sequence
 # Ask the user how many Fibonacci numbers to print (default = 10 to avoid blocking)
 try:
-    n = int(input("Enter how many Fibonacci numbers to print: "))
-except Exception:
+    n = int(input("I want the number of FIBONACCI numbers: "))
+except:
     n = 10
 
-a, b = 1, 1
 fib = []
-for _ in range(n):
-    fib.append(a)
-    a, b = b, a + b
-print(f"First {n} Fibonacci numbers:")
-print(fib)
-print()
-#fib = []
 a, b = 1, 1
-n = 5
-
 for i in range(n):
     fib.append(a)
     a, b = b, a + b
-    print(f"Iteration {i}: a={a}, b={b}, fib={fib}")
 
+print(f"The first {n} Fibonacci numbers are: {fib}")
 
 #%% 4) Factorial of a user-entered number
 import math
@@ -293,6 +283,7 @@ while len(primes) < 1000:
     num += 1
 for prime in primes:
     print(prime, end=' ')
+
 
 
 
