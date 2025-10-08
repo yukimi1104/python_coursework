@@ -251,24 +251,6 @@ for i in range(2, number + 1): # conclude input number into range
 print(total)
 
 #%% 5) Print the first 1000 prime numbers (simple Sieve of Eratosthenes)
-print("5) First 1000 prime numbers:")
-
-limit = 10000  # upper bound guess
-is_prime = [True] * (limit + 1)
-is_prime[0] = is_prime[1] = False
-
-for p in range(2, int(limit ** 0.5) + 1):
-    if is_prime[p]:
-        for multiple in range(p * p, limit + 1, p):
-            is_prime[multiple] = False
-
-primes = [i for i, prime in enumerate(is_prime) if prime][:1000]
-
-print(f"Number of primes found: {len(primes)}")
-print("First 20 primes:", primes[:20])
-# Uncomment below to print all
-# print(primes)
-
 def is_prime(n):
     if n < 2:
         return False
@@ -285,8 +267,6 @@ while len(primes) < 1000:
     num += 1
 for prime in primes:
     print(prime, end=' ')
-
-
 
 
 
