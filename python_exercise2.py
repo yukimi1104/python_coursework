@@ -91,6 +91,12 @@ print("After removing Leucine codons:", len(codons_non_leu))
 print("Leucine codons removed:", sorted(list(LEU_CODONS & set(codons))))
 print("Example of remaining codons:", codons_non_leu[:10])
 
+print(f"Original codon count: {len(codons)}")
+print(f"After removing Leucine codons: {len(codons_non_leu)}")
+print(f"Leucine codons removed: {sorted(list(LEU_CODONS & set(codons)))}")
+print(f"Example of remaining codons: {codons_non_leu[:10]}")
+
+
 #%% 2.1 Lists — 5
 # Create the same list of codons totally in Python starting with the string 'ATCG'
 
