@@ -107,7 +107,8 @@ in the string. (You might need to check the documentation for this one).
 count=my_string.count("GG")
 print(count) 
 import re
-print(re.search('GG', string)) 
+match = re.search("GG", my_string)
+print(match)
 f) Use the same string as in d). How many occurrences of AAAA are
 there? AAA? AA? A? Do you understand why?
 my_string = "AAAAGGAAAAGGAAAA"
@@ -292,6 +293,7 @@ while len(primes) < 1000:
     num += 1
 for prime in primes:
     print(prime, end=' ')
+
 
 
 
