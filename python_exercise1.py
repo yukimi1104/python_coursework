@@ -232,21 +232,23 @@ print(f"The first {n} Fibonacci numbers are: {fib}")
 
 #%% 4) Factorial of a user-entered number
 import math
+import sys
+number = int(input('Type a number: ')) # The number will be imported as a string so we cast it to an integer
 
-try:
-    num = int(input("Enter a non-negative integer for factorial: "))
-except Exception:
-    num = 5
+# Judge the input content, if it does not meet the set program will be terminated
+if number == 0:
+    print(1) # 0! = 1
+    sys.exit() # To avoid an else statement
+elif number < 0:
+    print('The number can not be negative', file=sys.stderr)
+    sys.exit() # To avoid an else statement
 
-if num < 0:
-    print("Factorial is not defined for negative numbers.")
-else:
-    fact = 1
-    for i in range(1, num + 1):
-        fact *= i
-    print(f"{num}! = {fact}")
-    print("Note: Python integers have no overflow limit, but very large values take time and memory.")
-print()
+total = 1 # set a start number
+
+for i in range(2, number + 1): # conclude input number into range 
+    total *= i
+
+print(total)
 
 #%% 5) Print the first 1000 prime numbers (simple Sieve of Eratosthenes)
 print("5) First 1000 prime numbers:")
@@ -283,6 +285,7 @@ while len(primes) < 1000:
     num += 1
 for prime in primes:
     print(prime, end=' ')
+
 
 
 
