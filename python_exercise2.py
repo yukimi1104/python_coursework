@@ -186,19 +186,50 @@ week_fruits = {'apples': 4, 'pears': 4, 'oranges': 7, 'watermelon': 1}
 friend_week_fruits = {'apples': 2, 'pears': 1, 'oranges': 2, 'waxberry': 4}
 
 # Create a new dictionary containing all unique fruits from both
-# Use a set union (|) of the keys to combine both dictionaries' fruit names
-all_keys = set(week_fruits) | set(friend_week_fruits)
+friend_week_fruits = {
+    'apples':2,
+    'pears':1,
+    'oranges':2,
+    'waxberry':4
+    }
 
-# Build the combined dictionary with summed values
-joint_fruits = {
-    fruit: week_fruits.get(fruit, 0) + friend_week_fruits.get(fruit, 0)
-    for fruit in all_keys
-}
+# Make all key names singular
+normalized_friend = {}
+for key, value in friend_week_fruits.items():
+    if key.endswith("s"):
+        #normalized_friend[key[:-1]] = value
+        normalized_friend[key.rstrip("s")] = value
+    else:
+        normalized_friend[key] = value
 
-# Print the result in alphabetical order
-print("Combined fruit totals (alphabetical order):")
-for fruit in sorted(joint_fruits):
-    print(f"{fruit}: {joint_fruits[fruit]} pieces")
+#print(normalized_friend)
+
+# Combine both dictionaries
+fruits_combined = {}
+
+# Add the first dictionary
+for key, value in sorted_fruits.items():
+    fruits_combined[key] = value
+
+# Add the second dictionary, taking into account the keys that already exist
+for key, value in normalized_friend.items():
+    if key in fruits_combined:
+        fruits_combined[key] += value
+    else:
+        fruits_combined[key] = value
+
+print(f"My fruit list:")
+for key in sorted_fruits: #fruits.value(), fruits.items()
+    print(f"{key}: {sorted_fruits[key]} pieces")
+
+print(f"\nMy friend's fruit list:")
+for key in friend_week_fruits: #fruits.value(), fruits.items()
+    print(f"{key}: {friend_week_fruits[key]} pieces")
+
+print(f"\nThe combined fruits list:")
+for key in fruits_combined: #fruits.value(), fruits.items()
+    print(f"{key}: {fruits_combined[key]} pieces")
+
 
 #%% 2.2 Dictionaries — 3
 # Make a small tab-separated file (TSV), load it into a dictionary,
