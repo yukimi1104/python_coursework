@@ -236,44 +236,56 @@ for key in fruits_combined: #fruits.value(), fruits.items()
 # then filter by sequence contents (W and X).
 
 # Create a small TSV file (for demo; in practice, you could load an existing file)
-file_path = "proteins.tsv"
-with open(file_path, "w", encoding="utf-8") as f:
-    f.write("ProteinID\tProteinSeq\n")
-    f.write("prot1\tAGSATGDASD\n")
-    f.write("prot4\tASLWASLD\n")
-    f.write("prot9\tPPASDSADSAD\n")
-    f.write("prot2\tXXSWKJXS\n")
-    f.write("prot8\tPSOASSADASD\n")
+data = """ProteinID\tProteinSeq
+prot1\tAGSATGDASD
+prot4\tASLWASLD
+prot9\tPPASDSADSAD
+prot2\tXXSWKJXS
+prot8\tPSOASSADASD"""
+
+with open("proteins.tsv", "w") as file:
+    file.write(data)
+    
+print(data)
 
 #%% a) Load the table into a dictionary
-proteins = {}  # empty dictionary
+protein_seq_dict = {}
 
-# open the file and read line by line
-with open(file_path, "r", encoding="utf-8") as f:
-    header = f.readline()  # skip the first header line
-    for line in f:
-        if not line.strip():
-            continue  # skip any blank lines
-        pid, seq = line.strip().split("\t")
-        proteins[pid] = seq
+with open("proteins.tsv", "r") as file:
+    next(file) # Skip the header
+    for line in file:
+        columns = line.strip().split('\t') 
+        protein_seq_dict[columns[0]] = [columns[1]]
 
+for protein_id, protein_seq in protein_seq_dict.items():
+    print(f"ProteinID: {protein_id}, ProteinSeq: {protein_seq}")
 # print all entries in the same order as they appear in the file
-print("All protein entries (file order):")
-for pid in proteins:
-    print(f"{pid}: {proteins[pid]}")
 
 #%% b) Only print peptides containing Tryptophan (W)
-print("\nProteins containing Tryptophan (W):")
-for pid, seq in proteins.items():
-    if "W" in seq:
-        print(f"{pid}: {seq}")
+protein_seq_dict = {}
 
+with open("proteins.tsv", "r") as file:
+    next(file) # Skip the header
+    for line in file:
+        columns = line.strip().split('\t') 
+        if "W" in columns[1]:
+            protein_seq_dict[columns[0]] = [columns[1]]
+
+for protein_id, protein_seq in protein_seq_dict.items():
+    print(f"ProteinID: {protein_id}, ProteinSeq: {protein_seq}")
 #%% c) Only print peptides that DO NOT contain X
-print("\nProteins without X:")
-for pid, seq in proteins.items():
-    if "X" not in seq:
-        print(f"{pid}: {seq}")
+protein_seq_dict = {}
 
+with open("proteins.tsv", "r") as file:
+    next(file) # Skip the header
+    for line in file:
+        columns = line.strip().split('\t') 
+        if "W" not in columns[1]:
+            protein_seq_dict[columns[0]] = [columns[1]]
+
+for protein_id, protein_seq in protein_seq_dict.items():
+    print(f"ProteinID: {protein_id}, ProteinSeq: {protein_seq}")
+    
 #%% 2.3 Sets — Helper function
 # Define a small helper function to read FASTA IDs (lines starting with ">")
 
