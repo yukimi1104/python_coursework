@@ -287,84 +287,70 @@ for protein_id, protein_seq in protein_seq_dict.items():
     print(f"ProteinID: {protein_id}, ProteinSeq: {protein_seq}")
     
 #%% 2.3 Sets — Helper function
-# Define a small helper function to read FASTA IDs (lines starting with ">")
+seq_id_set = set() # We create an empty set to keep track of the all sample IDs we have in regions.fna
+duplicates = []
 
-def fasta_ids(filepath):
-    """Return a list of all sequence IDs (first word after '>') from a FASTA file."""
-    ids = []
-    with open(filepath, "r", encoding="utf-8") as f:
-        for line in f:
-            if line.startswith(">"):
-                ids.append(line[1:].strip().split()[0])
-    return ids
+with open("regions.fna", "r") as file:
+    for line in file:
+        if line.startswith(">"):
+            seq_id = line.split()[0][1:] # Extract the ID without the traling >
+            if seq_id in seq_id_set:
+                duplicates.append(seq_id)
+            else:
+                seq_id_set.add(seq_id)
 
-#%% 2.3 Sets — 1
-# Create a small demo file (replace with your real file in actual use)
-with open("regions.fna", "w", encoding="utf-8") as f:
-    f.write(">r1\nATGCG\n>r2\nAAGTC\n>r3\nTTTGG\n>r2\nCCCAG\n")  # duplicate r2 for testing
-
-# Get all IDs
-ids_regions = fasta_ids("regions.fna")
-
-# Check uniqueness
-unique_ids = set(ids_regions)
-
-if len(ids_regions) == len(unique_ids):
-    print("✅ All sequence IDs are unique.")
+if duplicates:
+    print("Duplicate sequence IDs found:")
+    for duplicate in duplicates:
+        print(duplicate)
 else:
-    print("❌ Some IDs are duplicated.")
-    duplicates = [i for i in ids_regions if ids_regions.count(i) > 1]
-    print("Duplicated IDs:", sorted(set(duplicates)))
+    print("All sequence IDs are unique.")
+#%% 2.3 Sets — 1
+seq_id_sub1 = set()
+seq_id_sub2 = set()
 
-#%% 2.3 Sets — 2
-# Create demo files
-with open("reads.fna", "w", encoding="utf-8") as f:
-    f.write(">a\nAAA\n>b\nCCC\n>c\nGGG\n>d\nTTT\n")
+with open("regions_sub1.fna", "r") as regions_sub1:
+    for line in regions_sub1:
+        line = line.strip()
+        if line.startswith(">"):
+            seq_id = line.split()[0][1:]
+            seq_id_sub1.add(seq_id)
+#print(seq_id_sub1)
 
-with open("reads_ids.txt", "w", encoding="utf-8") as f:
-    f.write("a\nx\nc\nb\nz\n")
+with open("regions_sub2.fna", "r") as regions_sub2:
+    for line in regions_sub2:
+        line = line.strip()
+        if line.startswith(">"):
+            seq_id = line.split()[0][1:]
+            seq_id_sub2.add(seq_id)
 
-# Read IDs
-reads_ids = [line.strip() for line in open("reads_ids.txt", "r", encoding="utf-8") if line.strip()]
-fasta_ids_list = fasta_ids("reads.fna")
-fasta_ids_set = set(fasta_ids_list)
+intsersection_sub1_sub2 = seq_id_sub1 & seq_id_sub2
+print(f"{len(intsersection_sub1_sub2)} sequence IDs are present in both sub1 and sub2 files.")
 
-# Compare lookup speeds
-import time
+# To check the differences between to sets we can use the .difference() method
+seq_id_sub3 = set()
+with open("regions_sub3.fna", "r") as regions_sub3:
+    for line in regions_sub3:
+        line = line.strip()
+        if line.startswith(">"):
+            seq_id = line.split()[0][1:]
+            seq_id_sub3.add(seq_id)
 
-# Using list
-t0 = time.perf_counter()
-hits_list = sum(1 for rid in reads_ids if rid in fasta_ids_list)
-t1 = time.perf_counter()
+sub1_sub2_not_sub3 = intsersection_sub1_sub2.difference(seq_id_sub3)
+print(f"{len(sub1_sub2_not_sub3)} sequence IDs are present in sub1 and sub2 but not in sub3")
+file_ids = {'regions_sub1.fna': set(), 'regions_sub2.fna': set(), 'regions_sub3.fna': set()}
 
-# Using set
-t2 = time.perf_counter()
-hits_set = sum(1 for rid in reads_ids if rid in fasta_ids_set)
-t3 = time.perf_counter()
+for file, ids in file_ids.items():
+    with open(file, 'r') as f:
+        for line in f:
+            if line.startswith('>'):
+                ids.add(line.split()[0][1:])
+                
+for file, ids in file_ids.items():
+    print(file, len(ids))
 
-print(f"Hits using list : {hits_list}, time = {(t1 - t0) * 1e6:.1f} µs")
-print(f"Hits using set  : {hits_set}, time = {(t3 - t2) * 1e6:.1f} µs")
+intsersection_sub1_sub2 = file_ids['regions_sub1.fna'].intersection(file_ids['regions_sub2.fna'])
+print(f"{len(intsersection_sub1_sub2)} sequence IDs are present in both sub1 and sub2 files.")
 
-#%% 2.3 Sets — 3
-# Create demo files
-with open("regions_sub1.fna", "w", encoding="utf-8") as f:
-    f.write(">a\nNNN\n>b\nNNN\n>c\nNNN\n>d\nNNN\n")
-
-with open("regions_sub2.fna", "w", encoding="utf-8") as f:
-    f.write(">b\nNNN\n>c\nNNN\n>e\nNNN\n>f\nNNN\n")
-
-with open("regions_sub3.fna", "w", encoding="utf-8") as f:
-    f.write(">c\nNNN\n>g\nNNN\n")
-
-# Load IDs as sets
-ids1 = set(fasta_ids("regions_sub1.fna"))
-ids2 = set(fasta_ids("regions_sub2.fna"))
-ids3 = set(fasta_ids("regions_sub3.fna"))
-
-# IDs common to sub1 and sub2
-common_1_2 = ids1 & ids2  # intersection
-# Among those, which are not in sub3
-not_in_3 = common_1_2 - ids3  # set difference
-
-print(f"IDs in both sub1 and sub2 ({len(common_1_2)}): {sorted(common_1_2)}")
-print(f"IDs not in sub3 ({len(not_in_3)}): {sorted(not_in_3)}")
+sub1_sub2_not_sub3 = intsersection_sub1_sub2.difference(file_ids['regions_sub3.fna'])
+print(f"{len(sub1_sub2_not_sub3)} sequence IDs are present in sub1 and sub2 but not in sub3")
