@@ -105,16 +105,14 @@ print(f"Example of remaining codons: {codons_non_leu[:10]}")
 
 #%% 2.1 Lists — 5
 # Create the same list of codons totally in Python starting with the string 'ATCG'
-
-# Define the alphabet
-bases = "ATCG"
-
-# Use a nested loop (or list comprehension) to build all 3-letter combinations
-codons_from_alphabet = [a + b + c for a in bases for b in bases for c in bases]
-
-# Check result
-print("Number of codons generated:", len(codons_from_alphabet))  # should be 4*4*4 = 64
-print("First 10 codons:", codons_from_alphabet[:10])
+s=["A","C","T","G"]
+codon=[]
+for a in s:
+    for b in s:
+        for c in s:
+            codon.append(a+b+c)
+print(len(codon))
+print(codon)
 
 #%% 2.2 Dictionaries — 1
 # Create a fruit dictionary in two ways:
