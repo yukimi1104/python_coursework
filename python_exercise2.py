@@ -287,26 +287,25 @@ for protein_id, protein_seq in protein_seq_dict.items():
 #%% 2.3 Sets — Helper function
 file_path = r"C:\Users\yukim\Desktop\Python\Data\Data\regions.fna"
 seq_id_set = set() # We create an empty set to keep track of the all sample IDs we have in regions.fna
-duplicates = []
+duplicates = set()
 
 with open(file_path, "r") as file:
     for line in file:
         if line.startswith(">"):
             seq_id = line.strip()[1:].split()[0] # Extract the ID without the traling >
             if seq_id in seq_id_set:
-                duplicates.append(seq_id)
+                duplicates.add(seq_id)
             else:
                 seq_id_set.add(seq_id)
 
 if duplicates:
-    print("Duplicate sequence IDs found:")
+     print("Duplicate IDs in regions.fna:", sorted(duplicates))
     for duplicate in duplicates:
         print(duplicate)
 else:
     print("All sequence IDs are unique.")
 
 #%% Task 1: Compare IDs between reads_ids.txt and reads.fna
-# Author: Zimeng Liu
 # Description: Check how many sequence IDs from reads_ids.txt occur in reads.fna,
 # and compare runtime using list vs set lookups.
 
@@ -317,27 +316,14 @@ ids_file = r"C:\Users\yukim\Desktop\Python\Data\Data\reads_ids.txt"
 fasta_file = r"C:\Users\yukim\Desktop\Python\Data\Data\reads.fna"
 
 # --- Read IDs from text file ---
-with open(ids_file) as f:
-    query_ids = [line.strip() for line in f if line.strip()]
+with open(ids_file, "r") as f:
+    query_ids = {line.strip() for line in f if line.strip()}   # set + strip
 
-# --- Read IDs from FASTA file ---
-with open(fasta_file) as f:
-    fasta_ids = [line[1:].split()[0] for line in f if line.startswith(">")]
+with open(fasta_file, "r") as f:
+    fasta_ids = {line[1:].split()[0] for line in f if line.startswith(">")}  # set
 
-# --- Convert fasta_ids to set for faster lookup ---
-fasta_ids_set = set(fasta_ids)
-
-# --- 1️⃣ Using list (slow) ---
-start = time.time()
-found_list = [id_ for id_ in query_ids if id_ in fasta_ids]
-end = time.time()
-print(f"List lookup: found {len(found_list)} matches, time = {end - start:.5f} s")
-
-# --- 2️⃣ Using set (fast) ---
-start = time.time()
-found_set = [id_ for id_ in query_ids if id_ in fasta_ids_set]
-end = time.time()
-print(f"Set lookup:  found {len(found_set)} matches, time = {end - start:.5f} s")
+found = query_ids & fasta_ids
+print(f"Found {len(found)} IDs from reads_ids.txt in reads.fna")
 
 #%% Task 2: Compare IDs across three FASTA files
 # Author: Zimeng Liu
@@ -350,17 +336,15 @@ f3 = r"C:\Users\yukim\Desktop\Python\Data\Data\regions_sub3.fna"
 
 # --- Helper function to read fasta IDs ---
 def read_fasta_ids(path):
-    with open(path) as f:
+    with open(path, "r") as f:
         return {line[1:].split()[0] for line in f if line.startswith(">")}
 
 ids1 = read_fasta_ids(f1)
 ids2 = read_fasta_ids(f2)
 ids3 = read_fasta_ids(f3)
 
-# --- IDs present in both sub1 and sub2 ---
 common_12 = ids1 & ids2
-print(f"IDs in both sub1 and sub2: {len(common_12)}")
-
-# --- IDs missing in sub3 ---
 missing_in_3 = common_12 - ids3
-print(f"IDs present in sub1&2 but NOT in sub3: {len(missing_in_3)}")
+
+print(f"IDs in both sub1 and sub2: {len(common_12)}")
+print(f"IDs in sub1&2 but NOT in sub3: {len(missing_in_3)}")
