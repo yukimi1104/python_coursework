@@ -207,24 +207,24 @@ for i in range(n):
 print(f"The first {n} Fibonacci numbers are: {fib}")
 
 #%% 4) Factorial of a user-entered number
-import math
 import sys
-number = int(input('Type a number: ')) # The number will be imported as a string so we cast it to an integer
+try:
+    s = input("Please enter a number: ")
+    num = int(s)   # 转换成整数
+    if num < 0:
+        print("False enter (negative number)")
+        sys.exit()
+    # 如果输入为 0，阶乘结果应为 1
+    if num == 0:
+        print(1)
+        sys.exit()
+    result = 1
+    for i in range(2, num + 1):
+        result *= i
+    print(result)
+except ValueError:
+    print("Please enter a valid integer.")
 
-# Judge the input content, if it does not meet the set program will be terminated
-if number == 0:
-    print(1) # 0! = 1
-    sys.exit() # To avoid an else statement
-elif number < 0:
-    print('The number can not be negative', file=sys.stderr)
-    sys.exit() # To avoid an else statement
-
-total = 1 # set a start number
-
-for i in range(2, number + 1): # conclude input number into range 
-    total *= i
-
-print(total)
 
 #%% 5) Print the first 1000 prime numbers (simple Sieve of Eratosthenes)
 def is_prime(n):
@@ -243,6 +243,7 @@ while len(primes) < 1000:
     num += 1
 for prime in primes:
     print(prime, end=' ')
+
 
 
 
