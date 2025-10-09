@@ -227,22 +227,24 @@ except ValueError:
 
 
 #%% 5) Print the first 1000 prime numbers (simple Sieve of Eratosthenes)
-def is_prime(n):
-    if n < 2:
-        return False
-    for i in range(2, int(n ** 0.5) + 1):
-        if n % i == 0:
-            return False
-    return True
-primes = []
-num = 2  # start checking from 2
+def is_prime():
+    n = int(input("Please enter how many primes you want: "))
+    primes = []
+    s = 2  # Start checking from 2
 
-while len(primes) < 1000:
-    if is_prime(num):
-        primes.append(num)
-    num += 1
-for prime in primes:
-    print(prime, end=' ')
+    while len(primes) < n:
+        for i in range(2, int(s**0.5) + 1):
+            if s % i == 0:
+                break
+        else:
+            primes.append(s)
+        s += 1
+
+    print(primes)
+
+is_prime()
+
+
 
 
 
