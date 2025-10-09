@@ -105,10 +105,14 @@ print(position) #4
 e) *Then, find a way of calculating and printing the positions of all GGs
 in the string. (You might need to check the documentation for this one).
 count=my_string.count("GG")
-print(count) 
 import re
-match = re.search("GG", my_string)
-print(match)
+s = "ATGGCTGGGATG"
+# 找到所有 "GG" 的起始位置（用 ?= 允许重叠匹配）
+matches = re.finditer(r'(?=GG)', s)
+# 提取并转换为 1-based 坐标
+positions = [m.start() + 1 for m in matches]
+print("GG found at positions:", positions)
+print("Total number of GG:", len(positions))
 f) Use the same string as in d). How many occurrences of AAAA are
 there? AAA? AA? A? Do you understand why?
 my_string = "AAAAGGAAAAGGAAAA"
@@ -117,34 +121,6 @@ print(my_string.count("AAA"))
 print(my_string.count("AA"))
 print(my_string.count("A"))
 # 3 4 6 12
-#non overlap
-my_string = "AAAAGGAAAAGGAAAA"
-positions = []
-start = 0
-
-while True:
-    idx = my_string.find("GG", start)
-    if idx == -1:
-        break
-    positions.append(idx)
-    print("Found GG at index:", idx)  # print here
-    start = idx + 2   # move past this 'GG' to avoid overlaps
-    #string.find(sub[, start[, end]])
-
-my_string = "AAAAGGAAAAGGAAAA"
-positions = []
-start = 0
-idx = my_string.find("GG", start)  # initialize idx before the loop
-
-while idx != -1:
-    positions.append(idx)
-    print("Found GG at index:", idx)
-    start = idx + 2   # move past this "GG" to avoid overlaps
-    idx = my_string.find("GG", start)  # update idx for the next iteration
-
-print("All positions:", positions)
-
-print(positions)
 g) Store the strings "AcgT" and "acGT" into two different variables, and
 do a check on whether they contain the same letters. You can do this
 with a basic comparison after doing a method-call on each of them. This
@@ -267,6 +243,7 @@ while len(primes) < 1000:
     num += 1
 for prime in primes:
     print(prime, end=' ')
+
 
 
 
