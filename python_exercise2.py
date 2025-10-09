@@ -313,8 +313,8 @@ else:
 import time
 
 # --- File paths ---
-ids_file = r"C:\Users\yukim\Desktop\Python\Data\reads_ids.txt"
-fasta_file = r"C:\Users\yukim\Desktop\Python\Data\reads.fna"
+ids_file = r"C:\Users\yukim\Desktop\Python\Data\Data\reads_ids.txt"
+fasta_file = r"C:\Users\yukim\Desktop\Python\Data\Data\reads.fna"
 
 # --- Read IDs from text file ---
 with open(ids_file) as f:
@@ -344,9 +344,9 @@ print(f"Set lookup:  found {len(found_set)} matches, time = {end - start:.5f} s"
 # Description: Find common and missing IDs across regions_sub*.fna files.
 
 # --- File paths ---
-f1 = r"C:\Users\yukim\Desktop\Python\Data\regions_sub1.fna"
-f2 = r"C:\Users\yukim\Desktop\Python\Data\regions_sub2.fna"
-f3 = r"C:\Users\yukim\Desktop\Python\Data\regions_sub3.fna"
+f1 = r"C:\Users\yukim\Desktop\Python\Data\Data\regions_sub1.fna"
+f2 = r"C:\Users\yukim\Desktop\Python\Data\Data\regions_sub2.fna"
+f3 = r"C:\Users\yukim\Desktop\Python\Data\Data\regions_sub3.fna"
 
 # --- Helper function to read fasta IDs ---
 def read_fasta_ids(path):
