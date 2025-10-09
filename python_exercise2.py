@@ -285,13 +285,14 @@ for protein_id, protein_seq in protein_seq_dict.items():
     print(f"ProteinID: {protein_id}, ProteinSeq: {protein_seq}")
     
 #%% 2.3 Sets — Helper function
+file_path = r"C:\Users\yukim\Desktop\Python\Data\Data\regions.fna"
 seq_id_set = set() # We create an empty set to keep track of the all sample IDs we have in regions.fna
 duplicates = []
 
-with open("regions.fna", "r") as file:
+with open(file_path, "r") as file:
     for line in file:
         if line.startswith(">"):
-           seq_id = line.strip()[1:].split()[0] # Extract the ID without the traling >
+            seq_id = line.strip()[1:].split()[0] # Extract the ID without the traling >
             if seq_id in seq_id_set:
                 duplicates.append(seq_id)
             else:
