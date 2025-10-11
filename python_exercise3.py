@@ -126,9 +126,9 @@ letter_list = ["a", "b", "c", "e", "f", "g", "h", "i"]
 # Print one per line with requested transformation:
 for idx, letter in enumerate(letter_list, start=1):
     if idx % 2 == 1:  # 1st, 3rd, 5th... -> uppercase
-        print(letter.upper())
+        print(letter.upper()，end=" ")
     else:
-        print(letter)
+        print(letter,end=" ")
 
 #%% 3.1 Loops and conditions — 12 *
 # mRNA: find positions (1..10) of Tyr codons (UAU, UAC)
