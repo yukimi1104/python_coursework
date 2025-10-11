@@ -180,6 +180,10 @@ except ValueError as e:
 def is_valid_dna(seq):
     valid = set("ATCG")
     return all(ch in valid for ch in seq.upper())
+    #for ch in seq.upper():
+    #if ch not in valid:
+        #return False
+return True
 
 while True:
     seq = input("Please type a DNA sequence: ").strip()
