@@ -177,18 +177,21 @@ try:
     print("Your sequence is valid:", seq)
 except ValueError as e:
     print("Error:", e)
-def is_valid_dna(seq):
-    valid = set("ATCG")
-    return all(ch in valid for ch in seq.upper())
-    #for ch in seq.upper():
-    #if ch not in valid:
-        #return False
-return True
+def is_valid_dna():
+    valid = set("ACTG")
+    while True:
+        try:
+            seq = input("Please enter a DNA sequence: ").strip()
+            # 检查每个字符是否合法
+            for ch in seq.upper():
+                if ch not in valid:
+                    # 主动抛出错误
+                    raise ValueError(f"Invalid nucleotide '{ch}'")
+            # 如果循环结束都没出错，则说明合法
+            print("You have entered a valid DNA sequence!")
+            return True
 
-while True:
-    seq = input("Please type a DNA sequence: ").strip()
-    if is_valid_dna(seq):
-        print("You have entered a valid DNA sequence.")
-        break
-    else:
-        print("Your sequence contains an invalid nucleotide. Please try again.")
+        except ValueError as e:
+            # 捕获上面 raise 的错误
+            print(e)
+            print("Please try again.\n")
