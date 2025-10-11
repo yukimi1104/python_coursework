@@ -164,51 +164,27 @@ def first_1000_primes():
 # Uncomment to print them all:
 # print("\n".join(map(str, first_1000_primes())))
 
-#%% 3.2 Error exceptions — 14
-# Ask user for DNA and RAISE an exception if any non-ACGT is present
-
-def validate_dna_raises():
-    try:
-        seq = input("Please type a DNA sequence: ").strip()
-    except Exception:
-        seq = "GATCX"  # fallback shows the exception behavior
+def check_dna(seq):
+    valid = set("ATCG")  # 有效核苷酸
     for ch in seq.upper():
-        if ch not in "ACGT":
-            raise ValueError(f"Invalid nucleotide '{ch}' found in sequence.")
-    print("Sequence is valid (ACGT only).")
+        if ch not in valid:
+            raise ValueError(f"Invalid nucleotide found: {ch}")
+    return True
 
-# Uncomment to see the exception raised:
-# validate_dna_raises()
+try:
+    seq = input("Please type a DNA sequence: ").strip()
+    check_dna(seq)
+    print("Your sequence is valid:", seq)
+except ValueError as e:
+    print("Error:", e)
+def is_valid_dna(seq):
+    valid = set("ATCG")
+    return all(ch in valid for ch in seq.upper())
 
-#%% 3.2 Error exceptions — 15 *
-# Prompt until all nucleotides valid; show messages accordingly
-
-def prompt_until_valid_dna():
-    while True:
-        try:
-            seq = input("Please type a DNA sequence: ").strip()
-        except Exception:
-            # fallback cycles through some examples
-            for trial in ["ACCAB", "AGGTAHT", "GATC"]:
-                print(trial)  # echo as if user typed it
-                seq = trial
-                # fall through to validation
-                for ch in seq.upper():
-                    if ch not in "ACGT":
-                        print("Your sequence contains an invalid nucleotide. Please try again.")
-                        break
-                else:
-                    print("You have entered a valid DNA sequence.")
-                    return
-            return  # end fallback
-        # Validate user-provided seq
-        for ch in seq.upper():
-            if ch not in "ACGT":
-                print("Your sequence contains an invalid nucleotide. Please try again.")
-                break
-        else:
-            print("You have entered a valid DNA sequence.")
-            return
-
-# Uncomment to run interactively:
-# prompt_until_valid_dna()
+while True:
+    seq = input("Please type a DNA sequence: ").strip()
+    if is_valid_dna(seq):
+        print("You have entered a valid DNA sequence.")
+        break
+    else:
+        print("Your sequence contains an invalid nucleotide. Please try again.")
