@@ -44,28 +44,20 @@ if not os.path.exists(blast_tab):
     sys.exit(1)
 
 #%% Read BLASTX file and make a blastx dictionary with key,value as gene_id and protein description.
-#%% Read BLASTX file and make a blastx dictionary with key,value as gene_id and protein description.
-# BLAST 列位（从 0 开始）：queryName=0，hitDescription=9
 blastx_dict = {}
-with open(blast_tab, "r", encoding="utf-8") as file:
-    first = True
+with open(blast_tab, "r") as file:
     for line in file:
-        line = line.rstrip("\n")
-        if not line:
+        line = line.strip()
+        if line:
+            columns = line.split("\t")
+            gene_id = columns[0].strip()
+            protein_description = columns[-1].strip()
+        else:
             continue
-        if first:               # 跳过表头
-            first = False
+ # If there is no protein description,do not add to blastx dictionary.
+        if protein_description=="" or protein_description.upper()=="NULL":
             continue
-        columns = line.split("\t")
-        if len(columns) <= 9:
-            continue
-        gene_id = columns[0].strip()
-        protein_description = columns[9].strip().rstrip(",; ")
-        # If there is no protein description, do not add to blastx dictionary.
-        if protein_description == "" or protein_description.lower() == "null":
-            continue
-        # 只保留第一次命中（通常是top hit）
-        if gene_id not in blastx_dict:
+        else:
             blastx_dict[gene_id] = protein_description
             
 
