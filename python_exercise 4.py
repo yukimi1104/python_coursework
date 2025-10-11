@@ -129,8 +129,13 @@ if __name__ == "__main__":
 
 #%% 4.4 Append GC% to FASTA headers — CLI style with fallback
 def gc_percent(seq: str) -> float:
-    s = seq.upper().replace(" ", "").replace("\t", "")
-    return 0.0 if not s else 100.0 * (s.count("G") + s.count("C")) / len(s)
+    # 去掉所有空白（空格、制表、换行等），并转大写
+    s = ''.join(seq.split()).upper()
+    if not s:
+        return 0.0
+    gc = s.count('G') + s.count('C')
+    pct = gc * 100.0 / len(s)
+    return pct
 
 def append_gc_to_headers(in_path: Path, out_path: Path):
     out_lines, header, parts = [], None, []
