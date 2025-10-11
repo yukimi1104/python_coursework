@@ -307,6 +307,61 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+    #!/usr/bin/env python3
+from pathlib import Path
+import argparse
+import sys
+
+def find_sequence_start_line(fasta_path: Path, target_id: str) -> int | None:
+    """
+    Return the 1-based line number where the *sequence* starts for the entry
+    whose header ID matches `target_id`. The ID is taken as the first token
+    after '>' on the header line. Skips blank lines between header and sequence.
+    """
+    header_found = False
+    with fasta_path.open("r", encoding="utf-8") as fh:
+        for idx, raw in enumerate(fh, start=1):  # 1-based line numbers
+            line = raw.rstrip("\n")
+            if line.startswith(">"):
+                # Parse ID = first whitespace-delimited token after '>'
+                id_token = line[1:].strip().split()[0] if len(line) > 1 else ""
+                header_found = (id_token == target_id)
+            else:
+                if header_found:
+                    # Skip possible empty lines between header and sequence
+                    if line.strip() == "":
+                        continue
+                    return idx
+    return None  # not found
+
+def parse_args():
+    ap = argparse.ArgumentParser(
+        description="Print the line number where a FASTA sequence starts for a given ID."
+    )
+    ap.add_argument("fasta", type=Path, help="Input FASTA file")
+    ap.add_argument("seq_id", help="Sequence ID to search (first token after '>')")
+    return ap.parse_args()
+
+def main():
+    args = parse_args()
+
+    if not args.fasta.exists():
+        print(f"❌ Input file not found: {args.fasta}", file=sys.stderr)
+        sys.exit(1)
+
+    line_no = find_sequence_start_line(args.fasta, args.seq_id)
+    if line_no is None:
+        print(f"❌ ID '{args.seq_id}' not found in {args.fasta}", file=sys.stderr)
+        sys.exit(2)
+
+    print(line_no)
+
+if __name__ == "__main__":
+    main()
+
 ##!/usr/bin/env python3
 from pathlib import Path
 import argparse
