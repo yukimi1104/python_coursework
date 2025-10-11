@@ -44,8 +44,8 @@ for p in home.glob("*.txt"):
         print("Stem:", p.stem, "| is_file:", p.is_file())
 
 #%% 4.1 Pathlib — f) Path from string; check exists
-maybe_path = Path(str(home / "possibly_missing_file.xyz"))
-print(f"{maybe_path} exists?" , maybe_path.exists())
+maybe_path = home / "possibly_missing_file.xyz"
+print(f"{maybe_path} exists?", maybe_path.exists())
 
 #%% 4.2 Encodings & CSV — a) ASCII encode a Swedish sentence
 text = "är det du som har kaffebrödet, Gösta?"
