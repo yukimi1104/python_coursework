@@ -128,20 +128,31 @@ if __name__ == "__main__":
     main()
 
 #%% 4.4 Append GC% to FASTA headers — CLI style with fallback
+#!/usr/bin/env python3
+from pathlib import Path
+import argparse
+
 def gc_percent(seq: str) -> float:
-    # 去掉所有空白（空格、制表、换行等），并转大写
+    """
+    GC% = (G + C) / length * 100, after removing whitespace and uppercasing.
+    """
     s = ''.join(seq.split()).upper()
     if not s:
         return 0.0
-    gc = s.count('G') + s.count('C')
-    pct = gc * 100.0 / len(s)
-    return pct
+    return (s.count('G') + s.count('C')) * 100.0 / len(s)
 
-def append_gc_to_headers(in_path: Path, out_path: Path):
-    out_lines, header, parts = [], None, []
+def append_gc_to_fasta(in_path: Path, out_path: Path) -> None:
+    out_lines = []
+    header = None
+    parts = []
+
     with open(in_path, "r", encoding="utf-8") as fh:
         for line in fh:
+            line = line.rstrip("\n")
+            if not line:
+                continue
             if line.startswith(">"):
+                # flush previous sequence
                 if header is not None:
                     seq = "".join(parts)
                     out_lines.append(f"{header} GC:{gc_percent(seq):.1f}%\n")
@@ -150,20 +161,37 @@ def append_gc_to_headers(in_path: Path, out_path: Path):
                 parts = []
             else:
                 parts.append(line.strip())
-        if header is not None:
-            seq = "".join(parts)
-            out_lines.append(f"{header} GC:{gc_percent(seq):.1f}%\n")
-            out_lines.append(seq + "\n")
-    with open(out_path, "w", encoding="utf-8") as out:
-        out.writelines(out_lines)
-    print(f"Wrote GC-appended FASTA -> {out_path}")
 
-if len(sys.argv) >= 3:
-    in_gc = Path(sys.argv[1]); out_gc = Path(sys.argv[2])
-else:
-    in_gc = fa_in; out_gc = Path("paxillus_with_gc.fna")
-append_gc_to_headers(in_gc, out_gc)
+    # flush last sequence
+    if header is not None:
+        seq = "".join(parts)
+        out_lines.append(f"{header} GC:{gc_percent(seq):.1f}%\n")
+        out_lines.append(seq + "\n")
 
+    with open(out_path, "w", encoding="utf-8") as fo:
+        fo.writelines(out_lines)
+
+def parse_args() -> argparse.Namespace:
+    ap = argparse.ArgumentParser(
+        description="Append GC%% to FASTA headers."
+    )
+    ap.add_argument("input_fasta", help="Input FASTA file (e.g., paxillus.fna)")
+    ap.add_argument("output_fasta", help="Output FASTA with GC%% in headers")
+    return ap.parse_args()
+
+def main():
+    args = parse_args()
+    in_path = Path(args.input_fasta)
+    out_path = Path(args.output_fasta)
+
+    if not in_path.exists():
+        raise SystemExit(f"❌ Input file not found: {in_path}")
+
+    append_gc_to_fasta(in_path, out_path)
+    print(f"✅ Done. Wrote -> {out_path.resolve()}")
+
+if __name__ == "__main__":
+    main()
 #%% 4.5 Find header line number by sequence ID — print line or error
 # gc_append_fasta.py
 import argparse
@@ -276,6 +304,28 @@ def main():
     else:
         print(f"❗ ID '{target_id}' not found in {fasta_path.name}")
         sys.exit(2)
+
+if __name__ == "__main__":
+    main()
+##!/usr/bin/env python3
+from pathlib import Path
+import argparse
+
+def parse_args():
+    ap = argparse.ArgumentParser(description="Describe what this script does.")
+    ap.add_argument("input",  type=Path, help="Input file")
+    ap.add_argument("output", type=Path, help="Output file")
+    return ap.parse_args()
+
+def main():
+    args = parse_args()
+    in_path: Path = args.input
+    out_path: Path = args.output
+
+    # 例：读 -> 写
+    text = in_path.read_text(encoding="utf-8")
+    out_path.write_text(text, encoding="utf-8")
+    print(f"Done -> {out_path.resolve()}")
 
 if __name__ == "__main__":
     main()
