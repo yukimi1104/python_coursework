@@ -117,7 +117,7 @@ print(p.exists()) # True 或 False
     ids = []
 
     # Extract IDs
-    with open(input_file, "r", encoding="utf-8") as fin:
+    with open(input_path, "r", encoding="utf-8") as fin:
         for line in fin:
             line = line.strip()
             if line.startswith(">"):
