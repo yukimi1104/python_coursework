@@ -101,6 +101,13 @@ def main():
 
     input_file = sys.argv[1]
     output_file = sys.argv[2]
+#%%input_file = "C:/Users/yukim/Desktop/malaria.fna"
+p = Path(input_file)
+
+print(p.name)     # malaria.fna
+print(p.suffix)   # .fna
+print(p.parent)   # C:\Users\yukim\Desktop
+print(p.exists()) # True 或 False
 
     input_path = Path(input_file)
     if not input_path.exists():
