@@ -200,81 +200,6 @@ def main():
 if __name__ == "__main__":
     main()
 #%% 4.5 Find header line number by sequence ID — print line or error
-#!/usr/bin/env python3
-from pathlib import Path
-import argparse
-import sys
-
-def find_sequence_start_line(fasta_path: Path, target_id: str) -> int | None:
-    """
-    Return the 1-based line number where the *sequence* starts for the entry
-    whose header ID matches `target_id`. The ID is taken as the first token
-    after '>' on the header line. Skips blank lines between header and sequence.
-    """
-    header_found = False
-    with fasta_path.open("r", encoding="utf-8") as fh:
-        for idx, raw in enumerate(fh, start=1):  # 1-based line numbers
-            line = raw.rstrip("\n")
-            if line.startswith(">"):
-                # Parse ID = first whitespace-delimited token after '>'
-                id_token = line[1:].strip().split()[0] if len(line) > 1 else ""
-                header_found = (id_token == target_id)
-            else:
-                if header_found:
-                    # Skip possible empty lines between header and sequence
-                    if line.strip() == "":
-                        continue
-                    return idx
-    return None  # not found
-
-def parse_args():
-    ap = argparse.ArgumentParser(
-        description="Print the line number where a FASTA sequence starts for a given ID."
-    )
-    ap.add_argument("fasta", type=Path, help="Input FASTA file")
-    ap.add_argument("seq_id", help="Sequence ID to search (first token after '>')")
-    return ap.parse_args()
-
-def main():
-    args = parse_args()
-
-    if not args.fasta.exists():
-        print(f"❌ Input file not found: {args.fasta}", file=sys.stderr)
-        sys.exit(1)
-
-    line_no = find_sequence_start_line(args.fasta, args.seq_id)
-    if line_no is None:
-        print(f"❌ ID '{args.seq_id}' not found in {args.fasta}", file=sys.stderr)
-        sys.exit(2)
-
-    print(line_no)
-
-if __name__ == "__main__":
-    main()
-
-##!/usr/bin/env python3
-from pathlib import Path
-import argparse
-
-def parse_args():
-    ap = argparse.ArgumentParser(description="Describe what this script does.")
-    ap.add_argument("input",  type=Path, help="Input file")
-    ap.add_argument("output", type=Path, help="Output file")
-    return ap.parse_args()
-
-def main():
-    args = parse_args()
-    in_path: Path = args.input
-    out_path: Path = args.output
-
-    # 例：读 -> 写
-    text = in_path.read_text(encoding="utf-8")
-    out_path.write_text(text, encoding="utf-8")
-    print(f"Done -> {out_path.resolve()}")
-
-if __name__ == "__main__":
-    main()
-
 # parse_ids_from_fasta.py
 # -*- coding: utf-8 -*-
 
@@ -331,83 +256,102 @@ if __name__ == "__main__":
 
 
 #%% 4.6 Convert FASTQ -> FASTA — robust 4-line parsing (with fallback demo)
-# fastq_to_fasta.py
+# -*- coding: utf-8 -*-
+"""
+fastq_to_fasta.py
+-----------------
+Convert FASTQ or FASTQ.GZ file → FASTA format (wrapped at 60 chars per line)
+
+Usage:
+    python fastq_to_fasta.py input.fastq[.gz] output.fasta
+"""
+
 import sys
 from pathlib import Path
 import gzip
 
-def open_text_maybe_gz(path):
-    p = Path(path)
-    if p.suffix == ".gz":
+
+#%% Helper: open compressed or plain text file
+def open_fastq(fastq_file):
+    """Return text-mode file handle for .fastq or .fastq.gz"""
+    p = Path(fastq_file)
+    if p.suffix == ".gz" or p.name.endswith(".gz"):
         return gzip.open(p, "rt", encoding="utf-8", newline="")
     return open(p, "r", encoding="utf-8", newline="")
 
-def write_fasta_record(fout, header, seq):
-    # header: whole header after '@' (keep any trailing info)
-    fout.write(">" + header + "\n")
-    # write sequence on one line; if you prefer wrapping, split every 60 chars
-    fout.write(seq + "\n")
 
+#%% Helper: write a single FASTA record with wrapping
+def write_fasta_record(fout, header, seq, wrap=60):
+    """Write one FASTA record, wrapping sequence every `wrap` characters"""
+    fout.write(">" + header + "\n")
+
+    # break sequence into lines of 'wrap' length
+    for i in range(0, len(seq), wrap):
+        fout.write(seq[i:i+wrap] + "\n")
+
+
+#%% Main conversion function
 def main():
     if len(sys.argv) != 3:
         print("Usage: python fastq_to_fasta.py input.fastq[.gz] output.fasta", file=sys.stderr)
         sys.exit(1)
 
     fin_path, fout_path = sys.argv[1], sys.argv[2]
+
     if not Path(fin_path).exists():
         print(f"❌ Input file not found: {fin_path}", file=sys.stderr)
         sys.exit(1)
 
     records = 0
-    with open_text_maybe_gz(fin_path) as fin, open(fout_path, "w", encoding="utf-8", newline="") as fout:
+    line_count = 0
+
+    with open_fastq(fin_path) as fin, open(fout_path, "w", encoding="utf-8", newline="") as fout:
         header = seq = plus = qual = None
 
-        for i, raw in enumerate(fin):
+        for i, raw in enumerate(fin, start=1):
+            line_count = i
             line = raw.rstrip("\n")
 
-            mod = i % 4
+            mod = (i - 1) % 4  # 4 lines per record
+
             if mod == 0:
-                # Header line: must start with '@'
                 if not line.startswith("@"):
-                    print(f"❌ Malformed FASTQ at line {i+1}: header must start with '@'", file=sys.stderr)
+                    print(f"❌ Malformed FASTQ at line {i}: header must start with '@'", file=sys.stderr)
                     sys.exit(2)
-                header = line[1:].strip()  # drop '@'
+                header = line[1:].strip()
+
             elif mod == 1:
-                # Sequence line
                 seq = line.strip()
+
             elif mod == 2:
-                # Plus line: must start with '+'
                 if not line.startswith("+"):
-                    print(f"❌ Malformed FASTQ at line {i+1}: third line must start with '+'", file=sys.stderr)
+                    print(f"❌ Malformed FASTQ at line {i}: third line must start with '+'", file=sys.stderr)
                     sys.exit(2)
                 plus = line
-            else:
-                # Quality line
-                qual = line.rstrip()
-                # Validate lengths
-                if len(seq) != len(qual):
-                    print(
-                        f"❌ Length mismatch at record {records+1}: "
-                        f"seq={len(seq)} vs qual={len(qual)}", file=sys.stderr
-                        
-                    )
+
+            else:  # mod == 3
+                qual = line.strip()
+                if seq is None or header is None:
+                    print(f"❌ Malformed FASTQ around line {i}: missing header/sequence", file=sys.stderr)
                     sys.exit(2)
 
-                # We have a full record → write FASTA
-                write_fasta_record(fout, header, seq)
+                if len(seq) != len(qual):
+                    print(f"❌ Length mismatch at record {records+1}: seq={len(seq)} vs qual={len(qual)}",
+                          file=sys.stderr)
+                    sys.exit(2)
+
+                # ✅ Write FASTA with wrapping
+                write_fasta_record(fout, header, seq, wrap=60)
                 records += 1
-                # reset (optional)
                 header = seq = plus = qual = None
 
-        # If file ended mid-record (not multiple of 4 lines)
-        if (i + 1) % 4 != 0:
+        if line_count % 4 != 0:
             print("❌ Incomplete FASTQ: file ended mid-record", file=sys.stderr)
             sys.exit(2)
 
     print(f"✅ Converted {records} records → {Path(fout_path).resolve()}")
 
+
+#%% Run script
 if __name__ == "__main__":
     main()
-#%%python fastq_to_fasta.py reads.fastq output.fasta
-# or with gzip input:
-#python fastq_to_fasta.py reads.fastq.gz output.fasta
