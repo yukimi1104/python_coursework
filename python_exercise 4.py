@@ -275,6 +275,60 @@ def main():
 if __name__ == "__main__":
     main()
 
+# parse_ids_from_fasta.py
+# -*- coding: utf-8 -*-
+
+import sys
+import argparse
+from pathlib import Path
+
+
+def find_id_line_numbers(fasta_path, seq_id):
+    """返回在 FASTA 文件中匹配到的 header 行号列表（从 1 开始计数）"""
+    hits = []
+    with open(fasta_path, "r", encoding="utf-8") as fh:
+        for lineno, line in enumerate(fh, start=1):
+            if line.startswith(">"):
+                # 取 '>' 后到第一个空白前的 token 作为 ID
+                idx = line[1:].strip().split()[0]
+                if idx == seq_id:
+                    hits.append(lineno)
+    return hits
+
+def process(in_path: Path, out_path: Path, seq_id: str) -> int:
+    """查找并把行号写入输出文件；返回命中次数"""
+    hits = find_id_line_numbers(in_path, seq_id)
+    with open(out_path, "w", encoding="utf-8") as out:
+        for n in hits:
+            out.write(f"{n}\n")
+    return len(hits)
+
+def main():
+    ap = argparse.ArgumentParser(
+        description="Get line number(s) in a FASTA file for a given sequence ID (header token without '>')."
+    )
+    ap.add_argument("input",  help="Input FASTA/FNA file")
+    ap.add_argument("seq_id", help="Sequence ID to search (e.g. 1_g)")
+    ap.add_argument("output", help="Output TXT file to write line numbers (one per line)")
+    args = ap.parse_args()
+
+    in_path  = Path(args.input)
+    out_path = Path(args.output)
+
+    if not in_path.exists():
+        print(f"❌ Input file not found: {in_path}", file=sys.stderr)
+        sys.exit(1)
+
+    count = process(in_path, out_path, args.seq_id)
+    if count:
+        print(f"✅ Found {count} hit(s) for ID '{args.seq_id}'. Line numbers → {out_path.resolve()}")
+    else:
+        print(f"ℹ️ No hits for ID '{args.seq_id}'. Wrote empty file: {out_path.resolve()}")
+
+if __name__ == "__main__":
+    main()
+
+
 
 #%% 4.6 Convert FASTQ -> FASTA — robust 4-line parsing (with fallback demo)
 # fastq_to_fasta.py
