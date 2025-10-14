@@ -23,7 +23,7 @@ def read_fasta(path: Path) -> List[Tuple[str, str]]:
     """Return list of (header, sequence)."""
     records = []
     header = None
-    parts: List[str] = []
+    parts=[]
     with open(path, "r", encoding="utf-8") as fh:
         for raw in fh:
             line = raw.strip()
@@ -41,7 +41,7 @@ def read_fasta(path: Path) -> List[Tuple[str, str]]:
     return records
 
 
-def write_fasta(path: Path, records: List[Tuple[str, str]]) -> None:
+def write_fasta(path，records):
     """Write selected records to new FASTA."""
     with open(path, "w", encoding="utf-8", newline="") as out:
         for h, s in records:
