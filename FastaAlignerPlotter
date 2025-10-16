@@ -1,0 +1,277 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Oct 15 13:40:16 2025
+
+@author: yukim
+"""
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Title: FastaAlignerPlotter.py
+Author: Yiran Chen
+Version: 1.0
+Date: 2025-10-15
+
+Description:
+    This part of program aims to visualize pairwise alignment results in a 
+    dot plotter. The input fasta file contains no less than two sequences
+    with equal length, using - indicating gaps. In the dot plotter:
+      - X-axis: sequence 1 (left → right)
+      - Y-axis: sequence 2 (bottom → top)
+      - Dark red: matches on the main diagonal (i == j)
+      - Green: matches off the main diagonal (i != j)
+      - White: mismatches or any gap ('-')
+    The main diagonal therefore runs from bottom-left to top-right.
+
+List of functions:
+    - read_fasta(path): read FASTA into {id:seq} in a dict form.
+    - parse_params(path): read scoring parameters(optional).
+    - validate_aligned(obj): ensure equal length; only A/C/G/T/- valid characters in sequences.
+    - build_dot_matrix(s1, s2): build 0/1/2 grid and score matrix for plotting.
+    - score_pair(s1, s2, params): compute identity/gaps/score based on parameters between pairs.
+    - format_result(id1, id2, res): formatting the output of each pair with identity, gap and score.
+    - plot_pair(id1, s1, id2, s2, savepath): save dot plot PNG.
+    
+List of non-standard modules:
+     -NumPy and matplotlib for making dot plot.
+     
+Procedure:
+    1. Read aligned sequences from input fasta file.
+    2. Validate bases(A/C/G/T/'-') and equal length in each pair of sequences.
+    3. Compute match grid and showing main diagonal matches for each pair.
+    4. Save output image named "<id1>_<id2>.png".
+
+Input:
+    - fasta file input_fasta.fna with no less than 2 aligned DNA sequences (A,C,G,T,'-')
+    - optional parameters.txt accepted for CLI parity but not applied in this visualization part.
+
+Output:
+    - one png image for each pair of sequences, e.g., id1_id2.png
+
+Usage:
+    python FastaAlignerPlotter.py input_fasta.fna parameters.txt [optional]
+
+Notes:
+    -according to test requirements, the input length should be equal, for it does not align, only evaluating.
+"""
+
+#!/usr/bin/env python3
+#%% import modules
+import sys
+import os
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap, BoundaryNorm
+VALID_BASE = set("ACGT-") #define valid characters set
+PARAM_DEFAULT = {"MATCH": 1, "TRANSITION": -1, "TRANSVERSION": -2, "GAP": -1} #define default parameters
+TRANSITIONS = {("A", "G"), ("G", "A"), ("C", "T"), ("T", "C")} #define the different types of transitions
+#%% The function of reading input fasta file
+def read_fasta(path):
+    #The aim is to create a dict seqs{id: seq} with characters uppercased and spaces removed.
+    seqs = {}
+    header=None
+    parts=[] 
+    with open(path, "r") as fin:
+        for line in fin:
+            line = line.strip()
+            if not line:  #remove empty lines
+                continue
+            if line.startswith(">"): #make sure header start with ">"
+                if header is not None: #the first loop header is none, so we should add the last one below
+                    seqs[header] = "".join(parts).replace(" ", "").upper()
+                header = line[1:].split()[0] #skip ">" and extract IDs
+                parts = [] #clean the sequences for a new ID
+            else:
+                parts.append(line.replace(" ", "")) #join the sequence lines of an ID
+        if header is not None:
+            seqs[header] = "".join(parts).replace(" ", "").upper() #join the sequence lines of the last ID
+    return seqs #return the dictionary, key are IDs,values are sequences
+#%% the function of getting parameters for scoring
+def parse_params(path):
+    params = PARAM_DEFAULT.copy() #avoid change of default values
+    with open(path, "r") as fh:
+        for line in fh:
+            line = line.strip() #remove whitespace
+            if not line or line.startswith("#") or "=" not in line: 
+                continue
+            ''' skip empty lines,lines for clarification(start with s),and
+                lines do not have a value for scoring(without "=")'''
+            key, value = line.split("=", 1)#split types and values
+            key, value = key.strip().upper(), value.strip() #remove whitespaces and all upperletters
+            if key in params: #if we have a parameter.txt, using values inside instead of default values
+                try:
+                    params[key] = int(value)
+                except ValueError: 
+                    pass  #e.g.,if the value is a string or other wrong parameters, remains default
+    return params
+#%% Validation of DNA sequences input
+def validate_aligned(obj):
+    if isinstance(obj, dict):#make sure the reading results is stored in a dict 
+        ids = list(obj.keys()) #get ids
+        seqs = [obj[i] for i in ids] #get sequences(values)
+    elif isinstance(obj, (list, tuple)):#if the input data are list or tuple
+        seqs = list(obj)
+        ids = [str(i + 1) for i in range(len(seqs))] 
+    if len(seqs) < 2: 
+        raise ValueError("No less than two aligned sequences should be in input_fasta.fna.")
+    L = len(seqs[0]) #the length of the first sequence
+    for s in seqs:
+        if len(s)!= L:
+            raise ValueError("Sequences are not in equal length.")
+    for idx in range(len(seqs)):  #iterate sequences and mark the index of sequence with invalid character 
+        s = seqs[idx] 
+        for ch in s:
+            if ch not in VALID_BASE:
+                raise ValueError(f"Invalid character '{ch}' in sequence {ids[idx]}.")
+    return ids, seqs, L
+
+#%% Built a score matrix with 0,1,2
+def build_dot_matrix(s1, s2):
+    """
+    Built an integer matrix M (L*L):
+      2 = dark red (main-diagonal match, i==j, same nucleotide, not '-')
+      1 = green (off-diagonal match, same nucleotide, not '-')
+      0 = white (mismatch or any gap)
+    """
+    L1, L2 = len(s1), len(s2)
+    if L1 != L2: #check if the length is equal
+        raise ValueError("Sequences must have equal length.")
+    L = L1
+    M = np.zeros((L, L), dtype=np.uint8) 
+    '''use dtype=np.uint8 (unsigned 8-bit integers) because the values needed are 0,1,2.
+     create an L×L matrix initialized to zeros, shown in white grids.'''
+    for i in range(L):
+        a = s1[i]
+        if a == "-": #skip gap as 0
+            continue
+        for j in range(L): 
+            b = s2[j]
+            if b == "-":
+                continue #white(0) for gap
+            if a == b: #if main diagonal, value=2, else off-diagonal 1
+               if i==j:
+                   M[j,i]=2
+               else:
+                   M[j,i]=1 
+                # NumPy arrays are indexed as M[row, col](in my case, id1 sequence as row)
+                # so start at zero from bottom left
+    return M
+#%% the function of formating
+def score_pair(s1, s2, params):
+    if len(s1) != len(s2): #check length
+        raise ValueError("Sequences must have equal length.")
+    s1, s2 = s1.upper(), s2.upper() #all upperletter
+    L = len(s1)
+    idn = 0 #identity
+    gaps = 0 #gap
+    score = 0 #total score
+    for i in range(L):#iterate each pair
+        a, b = s1[i], s2[i]
+        if a == "-" and b == "-":
+            continue  #skip both gaps
+        if a == "-" or b == "-":
+            gaps += 1  #find a gap 
+            score += params["GAP"] #using gap paramter
+            continue
+        if a == b:
+            idn += 1 #find identity pair
+            score += params["MATCH"] #using identity parameter
+        else:
+            if (a, b) in TRANSITIONS: #find transition
+                score += params["TRANSITION"]
+            else:                    #the left are tranversions
+                score += params["TRANSVERSION"]
+    idp = (idn / L * 100)  #dividing with total length to calculate relative percentage
+    gpp = (gaps / L * 100) 
+    return idn, idp, gaps, gpp, score, L
+#%% the function of formatting the result
+def format_result(id1, id2, res):
+    idn, idp, gaps, gpp, score, L = res #tuple unpacking for separate values
+    return f"{id1}-{id2}: Identity: {idn}/{L} ({idp:.1f}%), Gaps: {gaps}/{L} ({gpp:.1f}%), Score={score}"#%% Creating the dot plot
+# ---------- plotting ----------
+def plot_pair(id1, s1, id2, s2, savepath):
+    M = build_dot_matrix(s1, s2)
+    L = len(s1)
+    # color mapping: 0→white, 1→green, 2→dark red
+    cmap = ListedColormap(["#FFFFFF", "#1A9E00", "#8B0000"])
+    norm = BoundaryNorm([-0.5, 0.5, 1.5, 2.5], cmap.N)
+    #half-integer boundaries ensures that exact integer codes 0/1/2
+    fig, ax = plt.subplots(figsize=(8, 8), dpi=180) #create image with 8*8 inches and 180dpi and an axis
+    ax.imshow(M, origin="lower", cmap=cmap, norm=norm, interpolation="nearest")
+    '''origin="lower": put (0,0) at the bottom-left in order to make diagonal
+       line run from bottom-left to top-right.
+       cmap/norm: use color mapping user defined above.
+       interpolation="nearest": draw crisp square cells without smoothing and ensure boundary'''
+    ax.set_aspect("equal")
+    #equal scaling on x and y so each matrix cell appears as a square 
+    ax.set_xticks(np.arange(L)) #X axis tick positions: 0, 1, ..., L-1
+    ax.set_yticks(np.arange(L)) #Y axis tick positions: 0, 1, ..., L-1
+    ax.set_xticklabels(list(s1)) # X axis tick labels: each character of seq1 
+    ax.set_yticklabels(list(s2)) # Y axis tick labels: each character of seq1 
+    for tick in ax.get_xticklabels():
+        tick.set_rotation(0) # keep labels no rotation
+        tick.set_ha("center")# horizontally center each label over its tick
+    # Light grid per cell
+    ax.set_xticks(np.arange(-0.5, L, 1), minor=True) #creates a minor tick at every cell boundary
+    ax.set_yticks(np.arange(-0.5, L, 1), minor=True) 
+    ax.grid(which="minor", linestyle="-", linewidth=0.5, color="#DDDDDD")#draw a light gray gridline on each minor tick, so every matrix cell has a visible border.
+    ax.tick_params(which="minor", bottom=False, left=False)
+    #hide the minor ticky,only lefting grid lines
+    ax.set_xlabel(f"Sequence 1 ({id1})")
+    ax.set_ylabel(f"Sequence 2 ({id2})")
+    ax.set_title("Dot Plot (Main Diagonal: Dark Red; Off-diagonal Matches: Green)")
+    #name the title and axies
+    fig.tight_layout() #adjust subplot space,margin,... automatically to avoid overlap ticks, cut off margins
+    fig.savefig(savepath, bbox_inches="tight") #save png, remove whitespace around
+    plt.close(fig) #clean memory, close window
+#%% the function of check command,path,file exists,and read the input file, build matrix and make plot
+def main():
+    if len(sys.argv) < 2 or len(sys.argv) > 3: #check the usage
+        print("Usage: python FastaAlignerPlotter.py input_fasta.fna [parameters.txt]")
+        return
+    in_fna = sys.argv[1] #input path
+    params = PARAM_DEFAULT.copy() #copy and first use default value if no txt file
+    # Optional parameters.txt
+    if len(sys.argv) == 3:
+        pfile = sys.argv[2] #parameter file path
+        try:
+            params = parse_params(pfile)
+        except FileNotFoundError:
+            print(f"Warning: parameters file '{pfile}' not found. Use defaults.") #use default parameter due to lack of parameters.txt
+    try:
+        recs = read_fasta(in_fna)                  # get id and sequences in the dict
+        ids, seqs, L = validate_aligned(recs)      # validate
+        # Scores file: <input_basename>_scores.txt
+        stem = os.path.splitext(os.path.basename(in_fna))[0] #get the input file name, not with directory
+        scores_path = f"{stem}_scores.txt" #make the score file path based on input file
+        lines = []
+        n = len(ids)
+        for i in range(n - 1):
+            id1, s1 = ids[i], seqs[i]
+            for j in range(i + 1, n):
+                id2, s2 = ids[j], seqs[j]
+                # scoring for each position
+                res = score_pair(s1, s2, params)
+                lines.append(format_result(id1, id2, res))
+                # plot per pairto output png like id1_id2.png
+                png_name = f"{id1}_{id2}.png"
+                plot_pair(id1, s1, id2, s2, png_name)
+                print(f"{png_name} is created.")
+        #output a singlefile with the alignment scores for each pair
+        with open(scores_path, "w") as out:
+            out.write("\n".join(lines) + "\n") #join single line of result with "\n" at each line end 
+        print(f"{scores_path} file is created.")
+    except FileNotFoundError as e: #check if the input file can not found
+        print(f"[FileNotFoundError] {e.filename} not found.")
+    except ValueError as e:
+    # Input content is wrong: unequal length, illegal characters, too few sequences, bad params values.
+        print(f"[ValueError] {e}")
+    except TypeError as e:
+    # Wrong types passed into functions (e.g., single string instead of dict)
+        print(f"[TypeError] {e}")
+    except IndexError as e:
+    # Likely a coding/indexing mistake (ids or sequences length mismatch, dict indexed like a list)
+        print(f"[IndexError] {e}")
+if __name__ == "__main__":
+    main()
