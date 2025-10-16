@@ -20,9 +20,9 @@ Description:
 List of functions:
     - read_fasta(path): Read fasta file with header and sequences.
     - parse_params(path): Parse parameters for scoring from txt file or default.
-    - validate_align(seq): Ensure only 'ACTGactg-" are in sequences.
+    - validate_aligned(seq): Ensure only 'ACTGactg-" are in sequences.
     - score_pair(s1, s2, params): Calculate identity, gaps, and score.
-    - format_result(id1, id2, res):Produce a structured summary string for each pair.
+    - format_result(id1, id2, L):Produce a structured summary string for each pair.
 Procedure:
     1. Read FASTA file and (optional) parameters.txt.
     2. Validate that sequences have equal length and only in "ACTGactg-".
@@ -48,162 +48,146 @@ TRANSITIONS ={("A", "G"), ("G", "A"), ("C", "T"), ("T", "C")} #create a set of d
 VALID_BASE = set("ACGT-")  # all using upperletter
 
 
-# ----- FASTA -----
+#%% The function of reading input fasta file
 def read_fasta(path):
-    """Return dict {id: seq} with sequences uppercased and spaces removed."""
+    #The aim is to create a dict seqs{id: seq} with characters uppercased and spaces removed.
     seqs = {}
-    hdr, parts = None, []
-    with open(path, "r", encoding="utf-8") as fh:
-        for raw in fh:
-            line = raw.strip()
-            if not line:
+    header=None
+    parts=[] 
+    with open(path, "r") as fin:
+        for line in fin:
+            line = line.strip()
+            if not line:  #remove empty lines
                 continue
-            if line.startswith(">"):
-                if hdr is not None:
-                    seqs[hdr] = "".join(parts).replace(" ", "").upper()
-                hdr = line[1:].split()[0]
-                parts = []
+            if line.startswith(">"): #make sure header start with ">"
+                if header is not None: #the first loop header is none, so we should add the last one below
+                    seqs[header] = "".join(parts).replace(" ", "").upper()
+                header = line[1:].split()[0] #skip ">" and extract IDs
+                parts = [] #clean the sequences for a new ID
             else:
-                parts.append(line.replace(" ", ""))
-        if hdr is not None:
-            seqs[hdr] = "".join(parts).replace(" ", "").upper()
-    return seqs
+                parts.append(line.replace(" ", "")) #join the sequence lines of an ID
+        if header is not None:
+            seqs[header] = "".join(parts).replace(" ", "").upper() #join the sequence lines of the last ID
+    return seqs #return the dictionary, key are IDs,values are sequences
 
 
-# ----- Parameters -----
+#%% the function of getting parameters for scoring
 def parse_params(path):
-    """Read key=value lines to override defaults. Unknown keys are ignored."""
-    params = PARAM_DEFAULT.copy()
-    with open(path, "r", encoding="utf-8") as fh:
-        for raw in fh:
-            line = raw.strip()
-            if not line or line.startswith("#") or "=" not in line:
+    params = PARAM_DEFAULT.copy() #avoid change of default values
+    with open(path, "r") as fh:
+        for line in fh:
+            line = line.strip() #remove whitespace
+            if not line or line.startswith("#") or "=" not in line: 
                 continue
-            k, v = line.split("=", 1)
-            k, v = k.strip().upper(), v.strip()
-            if k in params:
+            ''' skip empty lines,lines for clarification(start with s),and
+                lines do not have a value for scoring(without "=")'''
+            key, value = line.split("=", 1)#split types and values
+            key, value = key.strip().upper(), value.strip() #remove whitespaces and all upperletters
+            if key in params: #if we have a parameter.txt, using values inside instead of default values
                 try:
-                    params[k] = int(v)
-                except ValueError:
-                    pass  # 非整数则保持默认
+                    params[key] = int(value)
+                except ValueError: 
+                    pass  #e.g.,if the value is a string or other wrong parameters, remains default
     return params
 
 
-# ----- Validation -----
+#%% Validation of DNA sequences input
 def validate_aligned(obj):
-    """
-    接受 dict {id: seq} 或可迭代的序列列表，验证：
-    1) 至少两条；2) 等长；3) 仅含 VALID_BASE。
-    返回 (ids, seqs, L) —— 规范化后的 id 列表、序列列表、共同长度。
-    """
-    if isinstance(obj, dict):
-        ids = list(obj.keys())
-        seqs = [obj[i] for i in ids]
-    else:
+    if isinstance(obj, dict):#make sure the reading results is stored in a dict 
+        ids = list(obj.keys()) #get ids
+        seqs = [obj[i] for i in ids] #get sequences(values)
+    elif isinstance(obj, (list, tuple)):#if the input data are list or tuple
         seqs = list(obj)
-        ids = [str(i + 1) for i in range(len(seqs))]
-
-    if len(seqs) < 2:
-        raise ValueError("At least two aligned sequences are required.")
-
-    L = len(seqs[0])
+        ids = [str(i + 1) for i in range(len(seqs))] 
+    if len(seqs) < 2: 
+        raise ValueError("No less than two aligned sequences should be in input_fasta.fna.")
+    L = len(seqs[0]) #the length of the first sequence
     for s in seqs:
-        if len(s) != L:
-            raise ValueError("Sequences are not of equal length.")
-
-    for idx in range(len(seqs)):
-        s = seqs[idx]
+        if len(s)!= L:
+            raise ValueError("Sequences are not in equal length.")
+    for idx in range(len(seqs)):  #iterate sequences and mark the index of sequence with invalid character 
+        s = seqs[idx] 
         for ch in s:
             if ch not in VALID_BASE:
-                raise ValueError(f"Invalid character '{ch}' found in sequence {ids[idx]}.")
-
+                raise ValueError(f"Invalid character '{ch}' in sequence {ids[idx]}.")
     return ids, seqs, L
 
 
-# ----- Scoring -----
+#%% the function of scoring for each alignment of bases pair
 def score_pair(s1, s2, params):
-    """Return (idn, idp, gaps, gpp, score, L)."""
-    if len(s1) != len(s2):
+    if len(s1) != len(s2): #check length
         raise ValueError("Sequences must have equal length.")
-    s1, s2 = s1.upper(), s2.upper()
+    s1, s2 = s1.upper(), s2.upper() #all upperletter
     L = len(s1)
-
-    idn = 0
-    gaps = 0
-    score = 0
-
-    # 不使用 zip：基于索引逐位比较
-    for i in range(L):
+    idn = 0 #identity
+    gaps = 0 #gap
+    score = 0 #total score
+    for i in range(L):#iterate each pair
         a, b = s1[i], s2[i]
         if a == "-" and b == "-":
-            continue  # 双缺口记 0 分
+            continue  #skip both gaps
         if a == "-" or b == "-":
-            gaps += 1
-            score += params["GAP"]
+            gaps += 1  #find a gap 
+            score += params["GAP"] #using gap paramter
             continue
         if a == b:
-            idn += 1
-            score += params["MATCH"]
+            idn += 1 #find identity pair
+            score += params["MATCH"] #using identity parameter
         else:
-            if (a, b) in TRANSITIONS:
+            if (a, b) in TRANSITIONS: #find transition
                 score += params["TRANSITION"]
-            else:
+            else:                    #the left are tranversions
                 score += params["TRANSVERSION"]
-
-    idp = (idn / L * 100) if L else 0.0
-    gpp = (gaps / L * 100) if L else 0.0
+    idp = (idn / L * 100)  #dividing with total length to calculate relative percentage
+    gpp = (gaps / L * 100) 
     return idn, idp, gaps, gpp, score, L
-
-
+#%% the function of formatting the result
 def format_result(id1, id2, res):
-    idn, idp, gaps, gpp, score, L = res
+    idn, idp, gaps, gpp, score, L = res #tuple unpacking for separate values
     return f"{id1}-{id2}: Identity: {idn}/{L} ({idp:.1f}%), Gaps: {gaps}/{L} ({gpp:.1f}%), Score={score}"
-
-
-# ----- CLI -----
-def main():
+#%% The function of validating inputs, handling errors, scoring, printing results, and optionally writing an output file.
+def main(): #check the command
     if len(sys.argv) < 2 or len(sys.argv) > 4:
         print("Usage: python FastaAligner.py input_fasta.fna [parameters.txt] [output_fasta.txt]")
         return
-
-    in_fna = sys.argv[1]
-    params = PARAM_DEFAULT.copy()
-    out_path = sys.argv[3] if len(sys.argv) == 4 else None
-
+    input_fasta = sys.argv[1] #input path
+    params = PARAM_DEFAULT.copy() #copy the original default param
+    out_path = sys.argv[3] if len(sys.argv) == 4 else None #optional output path
+#if the length>=3, there may be user-defined parameters.txt
     if len(sys.argv) >= 3:
-        pfile = sys.argv[2]
+        param_file = sys.argv[2]
         try:
-            params = parse_params(pfile)
+            params = parse_params(param_file)
         except FileNotFoundError:
-            print(f"Warning: parameters file '{pfile}' not found. Using defaults.")
-
+            print(f"Warning: parameters file '{param_file}' does not exist. Default used.")
+#read the input file, validation id and requences
     try:
-        recs = read_fasta(in_fna)              # {id: seq}
-        ids, seqs, _ = validate_aligned(recs)  # 统一校验
-
-        # 逐对计分（不使用 zip / itertools）
+        recs = read_fasta(input_fasta)              
+        ids, seqs, L = validate_aligned(recs)  
         lines = []
-        n = len(ids)
-        for i in range(n - 1):
-            id1, s1 = ids[i], seqs[i]
+        n = len(ids) #the total number of ids
+        for i in range(n - 1): #start from position 0{first position}
+            id1, s1 = ids[i], seqs[i] #iterate each position
             for j in range(i + 1, n):
                 id2, s2 = ids[j], seqs[j]
-                res = score_pair(s1, s2, params)
-                lines.append(format_result(id1, id2, res))
-
-        for ln in lines:
-            print(ln)
-
-        if out_path:
-            with open(out_path, "w", encoding="utf-8") as out:
-                out.write("\n".join(lines) + "\n")
-
-    except FileNotFoundError as e:
-        print(f"File {e.filename} not found!")
-    except (TypeError, ValueError, IndexError) as e:
-        print("Error:", e)
-
-
+                res = score_pair(s1, s2, params) #scoring
+                lines.append(format_result(id1, id2, res)) #formatting 
+        for l in lines: #print each sequences pairs result
+            print(l)
+        if out_path: #if optional output file
+            with open(out_path, "w") as out:
+                out.write("\n".join(lines) + "\n") #"\n" at each line end
+    except FileNotFoundError as e: #if file does not found
+        print(f"File {e.filename} does not exist.")
+    except ValueError as e:
+    # Input content is wrong: unequal length, illegal characters, too few sequences, bad params values.
+        print(f"[ValueError] {e}")
+    except TypeError as e:
+    # Wrong types passed into functions (e.g., single string instead of dict)
+        print(f"[TypeError] {e}")
+    except IndexError as e:
+    # Likely a coding/indexing mistake (ids or sequences length mismatch, dict indexed like a list)
+        print(f"[IndexError] {e}")
 if __name__ == "__main__":
     main()
 
