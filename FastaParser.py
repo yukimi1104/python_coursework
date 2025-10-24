@@ -131,3 +131,43 @@ def write_fasta(path: str | Path, entries: List[Tuple[str, str]]) -> None:
             f.write(f">{name}\n") #write headers
             for i in range(0, len(seq), 80): #keep 80 characters for one single line
                 f.write(seq[i:i+80] + "\n")
+
+#%% Parse DNA sequences from a FASTA-like formatted text.
+def parse_fasta_like(lines: List[str], qc: dict):
+#lines : List[str]:List of strings representing the lines of the input file.
+# qc : dict: A dictionary for tracking quality control metrics (format_detected, empty records).
+    header_re = re.compile(r"^>([^|\r\n]+)\|TYPE=(mtDNA|Y)$", re.I)
+    #match headers like  >SampleName|TYPE=mtDNA or >SampleName|TYPE=Y
+    mt, yy = [], [] #output separately for mtdna and y chromosome dna
+    cur_name: Optional[str] = None #The name (header) of the current sequence being read.
+    cur_type: Optional[str] = None #The type of the current sequence, extracted from the header ("mtDNA" or "Y").
+    cur_buf: List[str] = []#A temporary list buffer used to collect all sequence lines for the current record.
+    seen_any = False# A Boolean flag indicating whether at least one FASTA header ('>') has been found.
+    for ln in lines:
+        m = header_re.match(ln.strip()) #remove whitespaces and find if there are matched header
+        if m:
+            seen_any = True #at least one valid FASTA header in this file
+            if cur_name is not None and cur_type is not None:
+            # If there is already a previous record, store it and join beffered sequences, and separate mt or Y
+                seq = clean_seq("".join(cur_buf), qc)
+                (mt if cur_type.lower() == "mtdna" else yy).append((cur_name, seq))
+            cur_name = m.group(1).strip()
+            cur_type = m.group(2)
+            cur_buf = []
+            #Start a new entry from this header:
+            #group(1) = sample name, group(2) = type ('mtDNA' or 'Y')
+            #Reset the sequence buffer for the new entry
+        else:
+            if cur_name is not None:
+                cur_buf.append(ln.strip())
+            #If an entry name is now found, add the segments of sequences all together
+    if cur_name is not None and cur_type is not None:
+        seq = clean_seq("".join(cur_buf), qc)
+        (mt if cur_type.lower() == "mtdna" else yy).append((cur_name, seq))
+    #The first round of loop there is no valid header before, so add the last one manully
+    if seen_any:
+        qc["format_detected"] = "FASTA-like"
+        return mt, yy
+    #If at least one header found used this parser, update qc about format and return results
+    return None, None
+    #No FASTA-like headers were found and record this parser is not used
