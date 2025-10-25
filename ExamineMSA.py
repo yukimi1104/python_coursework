@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 ExamineMSA.py
 
@@ -68,18 +69,16 @@ Author : Yiran Chen
 
 """
 #%% importing library
-from __future__ import annotations #postpone evaluation of type hints.
-from typing import List, Tuple, Dict #static typing helpers
 from pathlib import Path #object-oriented filesystem paths
 import sys #intepreter utility(e.g., argv, exit).
 #%% global definition of allowed character set
 ALLOWED = set("ACGTN?-")
 #%% the function of read aligned fasta file to (name,sequence) tuple
-def read_fasta(path: str|Path) -> List[Tuple[str,str]]:
+def read_fasta(path):
     name = None # current header (without '>'); None means no active header now
-    buf: List[str] = [] #accumulator for sequence lines of the current record.
-    out: List[Tuple[str,str]] = [] #final output of tuple(name,sequence)
-    with open(path, "r", encoding="utf-8") as f:
+    buf = [] #accumulator list for sequence lines of the current record.
+    out = [] #final list output of tuple(name,sequence)
+    with open(path, "r",encoding="utf-8",errors="ignore") as f:
         for ln in f: #iterate lines
             ln = ln.rstrip("\n")
             if ln.startswith(">"):#headerlines with names
@@ -95,29 +94,29 @@ def read_fasta(path: str|Path) -> List[Tuple[str,str]]:
     out = [(n, "".join(ch if ch in ALLOWED else "N" for ch in s)) for n,s in out]
     return out
 #%% the function of loading scoring weights through optional file or default
-def load_weights(path: str|Path) -> Dict[str, float]:
+def load_weights(path):
     # define key-value dict
     w = {"MATCH":1.0, "MISMATCH":-1.0, "GAP":-2.0, "UNKNOWN":0.0}
     if path and Path(path).exists():
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, "r",encoding="utf-8",errors="ignore") as f:
             for ln in f:
                 ln = ln.strip() #remove whitespace
                 if not ln or ln.startswith("#") or "=" not in ln: #check if file not empty and have key-value "="
                     continue
                 k,v = ln.split("=",1) #get values 
                 try:
-                    w[k.strip().upper()] = float(v.strip())
+                    w[k.strip().upper()] = float(v.strip()) #change string values to float in order to calculate 
                 except ValueError:
                     pass #ignore lines where VALUE is not a valid float
     return w #return checked key-values
 #%% the function of checking all sequences have identical length
-def check_aligned(recs: List[Tuple[str,str]]) -> int:
-    lengths = {len(s) for _,s in recs}
+def check_aligned(recs):
+    lengths = {len(s) for _,s in recs} #chcek the length of aligned results
     if len(lengths) != 1: #more than one sequence length → not aligned.
         raise ValueError(f"Sequences not aligned (lengths found: {sorted(lengths)})")
     return next(iter(lengths)) #return the single common length
 #%% the function of calculating pairwise stats between two aligned sequences
-def pair_stats(a: str, b: str, w: Dict[str,float]) -> Tuple[int,int,int,float,float]:
+def pair_stats(a,b,w):#a and b as string seqs, w as a dic for key and float value
     total = len(a) #alignment length (assumed equal to len(b))
     comp = 0 #count of comparable columns (both in A/C/G/T).
     unc  = 0 #count of uncertain columns (any side in N/?/-).
@@ -142,13 +141,13 @@ def pair_stats(a: str, b: str, w: Dict[str,float]) -> Tuple[int,int,int,float,fl
                 score += w["UNKNOWN"]
     identity_pct = (100.0 * ident / total) if total > 0 else 0.0 #calculate percentage of identity
     return comp, unc, total, identity_pct, score
-
+#%% the main function
 def main():
     if len(sys.argv) != 4:
         sys.stderr.write("Usage: python ExamineMSA.py fasta_file weight_parameters output_file\n")
         sys.exit(2) #usage error
-    fasta_file, weights_file, out_file = sys.argv[1], sys.argv[2], sys.argv[3]
-    # Ensure the FASTA exists and is readable; if not, exit with code 1.
+    fasta_file, weights_file, out_file = sys.argv[1], sys.argv[2], sys.argv[3] 
+    # ensure the fasta exists and is readable; if not, exit with code 1.
     try:
         recs = read_fasta(fasta_file)              
     except FileNotFoundError:
@@ -156,7 +155,7 @@ def main():
         sys.exit(1)
     except OSError as e:
         sys.stderr.write(f"[ERROR] Could not read FASTA: {fasta_file} ({e})\n")
-        sys.exit(1)
+        sys.exit(1) #the file exists but can not be read due to os error
     # there should be no less than two sequences to compute pairwise stats.
     if len(recs) < 2:
         sys.stderr.write("[ERROR] Need at least 2 sequences for pairwise comparison.\n")
@@ -166,13 +165,13 @@ def main():
         aln_len = check_aligned(recs)                
     except ValueError as e:
         sys.stderr.write(f"[ERROR] {e}\n")
-        sys.exit(3)
+        sys.exit(3) #value error, not same length aligned
     # load scoring weights; "-" (or missing file) keeps defaults.
     W = load_weights(weights_file)
     # prepare the output directory (idempotent: no error if it already exists).
     Path(out_file).parent.mkdir(parents=True, exist_ok=True)
     # open output file and write a simple header + all pairwise rows.
-    with open(out_file, "w", encoding="utf-8") as f:
+    with open(out_file, "w", newline="") as f:
         # formatting output table header
         f.write("SampleA | SampleB | Comparable | Uncertain | Total | Identity% | Score\n")
         n = len(recs)                                
