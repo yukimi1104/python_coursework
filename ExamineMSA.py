@@ -13,7 +13,7 @@ Compute pairwise statistics for all sequence pairs in an aligned FASTA file:
 - Score           : per-column sum using weights:
                       MATCH     (+1 default)   when A/C/G/T == A/C/G/T
                       MISMATCH  (-1 default)   when A/C/G/T != A/C/G/T
-                      GAP       (-2 default)   when any '-' appears
+                      GAP       (-2 default)   when any of '-', '?', 'N' appears
                       UNKNOWN   ( 0 default)   when any '?' or 'N' (and no gap)
 
 Procedure
@@ -122,23 +122,23 @@ def pair_stats(a,b,w):#a and b as string seqs, w as a dic for key and float valu
     unc  = 0 #count of uncertain columns (any side in N/?/-).
     ident = 0 #count of identical A/C/G/T matches.
     score = 0.0 #accumulating scores
-    for x,y in zip(a,b): #iterate pair sequences if valid characters
-        ax = x in "ACGT"
-        ay = y in "ACGT"
-        if ax and ay:#if at the given position, both sides valid
-            comp += 1
-            if x == y:
-                ident += 1 #if identical
-                score += w["MATCH"]
-            else: #does bot identical
-                score += w["MISMATCH"]
-        else: #uncertain bases
-            # at least one is N/?/-
-            unc += 1
-            if x == "-" or y == "-": #gap
-                score += w["GAP"]
-            else: #unknown
-                score += w["UNKNOWN"]
+    for x, y in zip(a, b): #iterate pair sequences if valid characters
+      ax = x in "ACGT"
+      ay = y in "ACGT"
+      if ax and ay: # both sides valid bases
+          comp += 1
+          if x == y:
+              ident += 1
+              score += w["MATCH"]
+          else:
+              score += w["MISMATCH"]
+      else:
+          # at least one is not a definite base (N, ?, or '-')
+          unc += 1
+          if (x in "-?N") or (y in "-?N"):
+              score += w["GAP"]      # treat '-', '?', 'N' ALL as GAP for scoring
+          else:
+              score += w["UNKNOWN"]  # fallback; almost never used with current cleaning
     identity_pct = (100.0 * ident / total) if total > 0 else 0.0 #calculate percentage of identity
     return comp, unc, total, identity_pct, score
 #%% the main function
@@ -192,3 +192,4 @@ def main():
 # Standard Python script entry-point guard.
 if __name__ == "__main__":
     main()
+
